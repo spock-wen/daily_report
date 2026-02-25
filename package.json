@@ -9,7 +9,8 @@
     "server": "node src/server/server.js",
     "run": "node run.js",
     "deploy": "node deploy.js",
-    "generate-pages": "node src/server/generate_pages.js"
+    "generate-pages": "node src/server/generate_pages.js",
+    "get-openid": "node scripts/get_openid.js"
   },
   "keywords": [
     "github",
