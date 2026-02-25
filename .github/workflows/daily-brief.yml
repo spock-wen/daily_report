@@ -57,6 +57,7 @@ jobs:
       
       - name: Deploy to server
         run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "mkdir -p ${{ secrets.SERVER_PATH }}/src ${{ secrets.SERVER_PATH }}/templates"
           scp -r briefs ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/
           scp -r src/server ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/src/
           scp -r src/config ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/src/
