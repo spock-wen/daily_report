@@ -1,0 +1,14 @@
+[Unit]
+Description=GitHub Daily Brief File Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/daily_report
+ExecStart=/usr/bin/python3 /root/daily_report/server/start_server.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
