@@ -8,10 +8,14 @@ on:
 jobs:
   generate-brief:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -40,7 +44,7 @@ jobs:
           git add -f briefs/
           git add -f *.html
           git commit -m "docs: update daily brief - $(date '+%Y-%m-%d')" || echo "No changes to commit"
-          git push
+          git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
