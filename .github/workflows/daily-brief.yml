@@ -66,7 +66,8 @@ jobs:
       
       - name: Install dependencies and restart server
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.SERVER_PATH }} && npm install --production"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.SERVER_PATH }} && npm install --omit=dev"
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.SERVER_PATH }} && node src/server/generate_pages.js"
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "pkill -f 'node src/server/server.js' || true"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "pkill -f 'node src/server/server.js' 2>/dev/null || echo 'No running server'"
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.SERVER_PATH }} && nohup npm run server > server.log 2>&1 &"
+          echo "Server restarted successfully"
