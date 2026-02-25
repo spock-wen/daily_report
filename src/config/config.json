@@ -7,8 +7,7 @@
   },
   "generator": {
     "briefs_dir": "briefs",
-    "max_display_projects": 10,
-    "feishu_webhook_url": ""
+    "max_display_projects": 10
   },
   "server": {
     "port": 8080,

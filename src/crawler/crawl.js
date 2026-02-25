@@ -5,13 +5,17 @@ const path = require('path');
 const { fetchTrending } = require('./fetcher');
 const { parseTrending } = require('./parser');
 const { generateMarkdown, generateFeishuMessage } = require('../generator/generator');
-const { sendToFeishu } = require('../generator/feishu');
+const { sendMessage } = require('../generator/feishu');
 const config = require('../config/config');
 
 const BRIEF_DIR = path.join(__dirname, '..', '..', config.generator.briefs_dir);
 const DATE = new Date().toISOString().split('T')[0];
 const OUTPUT_FILE = path.join(BRIEF_DIR, `github-ai-trending-${DATE}.md`);
-const FEISHU_WEBHOOK_URL = process.env.FEISHU_WEBHOOK_URL || config.generator.feishu_webhook_url;
+
+const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
+const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
+const FEISHU_RECEIVE_ID = process.env.FEISHU_RECEIVE_ID;
+const FEISHU_RECEIVE_ID_TYPE = process.env.FEISHU_RECEIVE_ID_TYPE || 'chat_id';
 
 async function main() {
   console.log('🦞 大龙虾 GitHub 简报生成器');
@@ -40,13 +44,13 @@ async function main() {
     fs.writeFileSync(OUTPUT_FILE, md, 'utf8');
     console.log(`✅ 简报已生成: ${OUTPUT_FILE}`);
     
-    if (FEISHU_WEBHOOK_URL) {
+    if (FEISHU_APP_ID && FEISHU_APP_SECRET && FEISHU_RECEIVE_ID) {
       console.log('\n📤 正在发送到飞书...');
       const feishuMessage = generateFeishuMessage(projects);
-      await sendToFeishu(FEISHU_WEBHOOK_URL, feishuMessage);
+      await sendMessage(FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_RECEIVE_ID, FEISHU_RECEIVE_ID_TYPE, feishuMessage);
     } else {
-      console.log('\n⚠️ 未配置飞书 Webhook URL，跳过推送');
-      console.log('提示: 请设置环境变量 FEISHU_WEBHOOK_URL');
+      console.log('\n⚠️ 未配置飞书凭证，跳过推送');
+      console.log('提示: 请设置环境变量 FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_RECEIVE_ID');
     }
     
     console.log('\n' + '='.repeat(50));
