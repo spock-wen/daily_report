@@ -37,7 +37,8 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          git add briefs/
+          git add -f briefs/
+          git add -f *.html
           git commit -m "docs: update daily brief - $(date '+%Y-%m-%d')" || echo "No changes to commit"
           git push
         env:
