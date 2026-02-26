@@ -44,8 +44,7 @@ dist-ssr
 # Project specific
 briefs/
 .trae/
-server/output/
 
-# Generated HTML files
+# Generated files
 *.html
-!templates/*.html
+data.json

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchTrending } = require('./fetcher');
 const { parseTrending } = require('./parser');
-const { generateMarkdown, generateFeishuMessage } = require('../generator/generator');
+const { generateMarkdown, generateFeishuMessage, generateJsonData } = require('../generator/generator');
 const { sendMessage } = require('../generator/feishu');
 const config = require('../config/config');
 
@@ -43,6 +43,11 @@ async function main() {
     const md = generateMarkdown(projects);
     fs.writeFileSync(OUTPUT_FILE, md, 'utf8');
     console.log(`✅ 简报已生成: ${OUTPUT_FILE}`);
+    
+    const jsonFile = path.join(BRIEF_DIR, 'data.json');
+    const jsonData = generateJsonData(projects);
+    fs.writeFileSync(jsonFile, JSON.stringify(jsonData, null, 2), 'utf8');
+    console.log(`✅ 数据文件已生成: ${jsonFile}`);
     
     if (FEISHU_APP_ID && FEISHU_APP_SECRET && FEISHU_RECEIVE_ID) {
       console.log('\n📤 正在发送到飞书...');
