@@ -136,16 +136,16 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 1. 进入仓库 → **Settings** → **Secrets and variables** → **Actions**
 2. 点击 **New repository secret** 添加以下配置：
 
-| Secret 名称 | 说明 | 示例值 |
-|------------|------|--------|
-| `FEISHU_APP_ID` | 飞书应用 ID | `cli_xxxxxxxx` |
-| `FEISHU_APP_SECRET` | 飞书应用密钥 | `xxxxxxxxxxxxxx` |
-| `FEISHU_RECEIVE_ID` | 接收者 Open ID | `ou_xxxxxxxx` |
-| `FEISHU_RECEIVE_ID_TYPE` | ID 类型 | `open_id` |
-| `SERVER_USER` | 服务器用户名 | `root` |
-| `SERVER_IP` | 服务器 IP | `223.109.200.65` |
-| `SERVER_PATH` | 部署路径 | `/root/github_daily_report` |
-| `SERVER_SSH_KEY` | SSH 私钥 | `-----BEGIN RSA PRIVATE KEY-----...` |
+| Secret 名称 | 说明 | 如何获取 |
+|------------|------|----------|
+| `FEISHU_APP_ID` | 飞书应用 ID | 飞书开放平台 → 应用详情 → 凭证与基础信息 |
+| `FEISHU_APP_SECRET` | 飞书应用密钥 | 飞书开放平台 → 应用详情 → 凭证与基础信息（点击查看） |
+| `FEISHU_RECEIVE_ID` | 接收者 Open ID | 运行 `npm run get-openid` 或在飞书中查看 |
+| `FEISHU_RECEIVE_ID_TYPE` | ID 类型 | 固定值：`open_id` |
+| `SERVER_USER` | 服务器用户名 | 你的服务器登录用户名，如 `root` |
+| `SERVER_IP` | 服务器 IP | 你的云服务器公网 IP 地址 |
+| `SERVER_PATH` | 部署路径 | 服务器上存放项目的目录路径 |
+| `SERVER_SSH_KEY` | SSH 私钥 | 本地生成的私钥文件内容（见下方说明） |
 
 ## 📦 部署说明
 
