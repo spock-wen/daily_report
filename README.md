@@ -1,6 +1,6 @@
 # 🦞 GitHub AI 项目每日简报系统
 
-自动抓取 GitHub Trending 中的 AI 相关项目，生成每日简报并推送到飞书，同时部署静态网页供浏览。
+自动抓取 GitHub Trending 中的 AI 相关项目，生成每日简报并推送到飞书。
 
 ## ✨ 功能特性
 
@@ -8,8 +8,7 @@
 - 🤖 **AI 识别**：智能识别 AI 相关项目
 - 📝 **简报生成**：生成 Markdown 格式的详细简报
 - 📱 **飞书推送**：支持推送到飞书机器人
-- 🌐 **静态网页**：自动生成可浏览的 HTML 页面
-- ⏰ **定时任务**：GitHub Actions 自动执行
+- 📊 **JSON 数据**：输出结构化数据供其他系统使用
 
 ## 🚀 快速开始
 
@@ -26,12 +25,6 @@ npm install
 ```bash
 # 生成简报
 npm run crawl
-
-# 生成 HTML 页面
-npm run generate-pages
-
-# 启动本地服务器（可选）
-npm run server
 ```
 
 ## ⚙️ 配置说明
@@ -145,7 +138,7 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 | `SERVER_USER` | 服务器用户名 | 你的服务器登录用户名，如 `root` |
 | `SERVER_IP` | 服务器 IP | 你的云服务器公网 IP 地址 |
 | `SERVER_PATH` | 部署路径 | 服务器上存放项目的目录路径 |
-| `SERVER_SSH_KEY` | SSH 私钥 | 本地生成的私钥文件内容（见下方说明） |
+| `SERVER_SSH_KEY` | SSH 私钥 | 本地生成的私钥文件内容（见上方说明） |
 
 ## 📦 部署说明
 
@@ -154,42 +147,13 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 项目已配置 GitHub Actions，每天 UTC 23:00（北京时间早上 7:00）自动执行：
 
 1. 抓取 GitHub Trending 数据
-2. 生成简报和 HTML 页面
-3. 推送代码到仓库
-4. 部署静态文件到服务器
+2. 生成简报和 JSON 数据文件
+3. 推送消息到飞书
+4. SCP 文件到服务器
 
 ### 手动触发
 
 在 GitHub 仓库的 **Actions** 页面，选择 `Daily GitHub AI Brief` workflow，点击 **Run workflow** 手动触发。
-
-### 服务器 Nginx 配置
-
-在服务器上配置 Nginx 提供静态文件服务：
-
-```nginx
-server {
-    listen 8080;
-    server_name _;
-
-    root /root/github_daily_report;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-
-    location /briefs/ {
-        alias /root/github_daily_report/briefs/;
-    }
-}
-```
-
-确保目录权限正确：
-```bash
-chmod 755 /root/
-chmod 755 /root/github_daily_report/
-chmod 644 /root/github_daily_report/*.html
-```
 
 ## 📁 项目结构
 
@@ -198,20 +162,48 @@ daily_report/
 ├── .github/
 │   └── workflows/
 │       └── daily-brief.yml    # GitHub Actions 配置
-├── briefs/                     # 生成的简报文件
+├── briefs/                     # 生成的简报文件（不提交到 Git）
+│   ├── github-ai-trending-YYYY-MM-DD.md
+│   └── data.json              # 结构化数据
 ├── src/
 │   ├── config/                 # 配置文件
 │   ├── crawler/                # 爬虫模块
 │   ├── generator/              # 生成器模块
 │   │   ├── generator.js        # 简报生成
-│   │   ├── feishu.js           # 飞书推送
-│   │   └── insights.js         # 趋势分析
-│   ├── server/                 # 服务器模块
+│   │   └── feishu.js           # 飞书推送
 │   └── utils/                  # 工具函数
-├── templates/                  # HTML 模板
-├── deploy.js                   # 部署脚本
-├── run.js                      # 运行入口
+├── scripts/                    # 脚本工具
+├── .env.example                # 环境变量示例
 └── package.json
+```
+
+## 📊 输出数据格式
+
+### data.json
+
+```json
+{
+  "generatedAt": "2026-02-26T08:00:00Z",
+  "date": "2026-02-26",
+  "projects": [
+    {
+      "repo": "owner/repo",
+      "desc": "项目描述",
+      "descZh": "中文描述",
+      "language": "Python",
+      "stars": "10,000",
+      "todayStars": "500",
+      "forks": "1,000",
+      "isAI": true,
+      "url": "https://github.com/owner/repo"
+    }
+  ],
+  "stats": {
+    "totalProjects": 10,
+    "aiProjects": 8,
+    "avgStars": "5.5k"
+  }
+}
 ```
 
 ## 🔧 自定义配置
@@ -238,9 +230,12 @@ on:
 }
 ```
 
-### 添加自定义项目分析
+## 🤝 与 OpenClaw 集成
 
-编辑 `src/generator/generator.js` 中的 `getProjectFeatures` 和 `getProjectScenarios` 函数。
+本项目生成的 `data.json` 文件可供 OpenClaw 等系统读取，进行：
+- AI 趋势分析
+- 增强版 HTML 页面生成
+- 更详细的消息推送
 
 ## 📝 License
 

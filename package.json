@@ -2,14 +2,10 @@
   "name": "github-brief-system",
   "version": "1.0.0",
   "description": "GitHub AI 项目每日简报生成系统",
-  "main": "src/index.js",
+  "main": "src/crawler/crawl.js",
   "scripts": {
     "start": "node src/crawler/crawl.js",
     "crawl": "node src/crawler/crawl.js",
-    "server": "node src/server/server.js",
-    "run": "node run.js",
-    "deploy": "node deploy.js",
-    "generate-pages": "node src/server/generate_pages.js",
     "get-openid": "node scripts/get_openid.js"
   },
   "keywords": [
@@ -22,7 +18,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^5.2.1",
     "node-fetch": "^2.7.0"
   },
   "engines": {
