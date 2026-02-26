@@ -7,6 +7,7 @@ const config = require('../config/config');
 
 const app = express();
 const PORT = config.server.port || 8000;
+const HOST = config.server.host || '0.0.0.0';
 
 // 静态文件服务
 app.use(express.static(path.join(__dirname, '..', '..')));
@@ -147,13 +148,13 @@ app.get('/api/status', (req, res) => {
 });
 
 // 启动服务器
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log('🚀 GitHub 每日简报服务器');
   console.log('='.repeat(60));
-  console.log(`服务器已启动，监听端口: ${PORT}`);
-  console.log(`API 接口地址: http://localhost:${PORT}/api`);
-  console.log(`静态文件服务: http://localhost:${PORT}`);
-  console.log(`索引页面: http://localhost:${PORT}/index.html`);
+  console.log(`服务器已启动，监听地址: ${HOST}:${PORT}`);
+  console.log(`API 接口地址: http://${HOST}:${PORT}/api`);
+  console.log(`静态文件服务: http://${HOST}:${PORT}`);
+  console.log(`索引页面: http://${HOST}:${PORT}/index.html`);
   console.log('='.repeat(60));
 });
 
