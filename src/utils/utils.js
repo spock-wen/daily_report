@@ -15,13 +15,7 @@ const AI_KEYWORDS = [
 ];
 
 function formatDate(date) {
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-    timeZone: 'Asia/Shanghai'
-  });
+  return date.toISOString().split('T')[0];
 }
 
 function formatStars(stars) {
