@@ -213,7 +213,45 @@ function generateHtml(data, insights) {
 }
 
 function generateIndexHtml() {
+    const files = [];
+    
+    try {
+        const htmlFiles = fs.readdirSync(OUTPUT_DIR).filter(file => 
+            file.match(/^github-ai-trending-\d{4}-\d{2}-\d{2}\.html$/)
+        );
+        
+        htmlFiles.forEach(file => {
+            const match = file.match(/^github-ai-trending-(\d{4}-\d{2}-\d{2})\.html$/);
+            if (match) {
+                const date = match[1];
+                files.push({ date, file });
+            }
+        });
+        
+        files.sort((a, b) => b.date.localeCompare(a.date));
+    } catch (e) {
+        console.error('读取历史文件失败:', e.message);
+    }
+    
     const today = new Date().toISOString().split('T')[0];
+    const isTodayGenerated = files.some(f => f.date === today);
+    
+    let reportsHtml = '';
+    if (files.length > 0) {
+        reportsHtml = `
+        <div class="reports">
+            <h2>历史简报</h2>
+            <div class="reports-grid">
+                ${files.map((f, index) => `
+                <div class="report-card ${f.date === today ? 'latest' : ''}">
+                    <div class="report-date">${f.date}${f.date === today ? ' <span class="latest-badge">最新</span>' : ''}</div>
+                    <h3>🚀 GitHub AI 项目每日简报</h3>
+                    <a href="/${f.file}" class="report-link">查看详情 →</a>
+                </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
     
     return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -223,19 +261,84 @@ function generateIndexHtml() {
     <title>GitHub AI 每日简报</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f8fa; color: #24292e; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .container { text-align: center; padding: 40px; }
-        h1 { color: #0366d6; margin-bottom: 20px; }
-        p { color: #586069; margin-bottom: 30px; }
-        .btn { display: inline-block; background: #0366d6; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f8fa; color: #24292e; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #0366d6; margin-bottom: 10px; text-align: center; }
+        .subtitle { color: #586069; margin-bottom: 30px; text-align: center; }
+        .btn { display: inline-block; background: #0366d6; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 0 5px; }
         .btn:hover { background: #0257c2; }
+        .cta { text-align: center; margin: 30px 0; }
+        .reports { margin-top: 40px; }
+        .reports h2 { color: #0366d6; margin-bottom: 20px; }
+        .reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .report-card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; }
+        .report-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .report-card.latest { border-left: 4px solid #28a745; }
+        .report-date { font-size: 14px; color: #586069; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .latest-badge { background: #28a745; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .report-card h3 { color: #24292e; margin-bottom: 15px; font-size: 16px; }
+        .report-link { color: #0366d6; text-decoration: none; font-size: 14px; }
+        .report-link:hover { text-decoration: underline; }
+        .stats-bar {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0366d6;
+        }
+        .stat-label {
+            color: #586069;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 GitHub AI 每日简报</h1>
-        <p>自动抓取 GitHub Trending 热门 AI 项目，每日更新</p>
-        <a href="/github-ai-trending-${today}.html" class="btn">查看今日简报</a>
+        <h1>🚀 GitHub AI 项目每日简报</h1>
+        <p class="subtitle">追踪技术前沿，发现优质项目</p>
+        
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">${files.length}</div>
+                <div class="stat-label">简报总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${files.reduce((sum, f) => sum + 1, 0) * 10}</div>
+                <div class="stat-label">收录项目</div>
+            </div>
+        </div>
+        
+        ${isTodayGenerated ? `
+        <div class="cta">
+            <a href="/github-ai-trending-${today}.html" class="btn">查看今日简报</a>
+        </div>
+        ` : ''}
+        
+        ${reportsHtml}
+        
+        <div class="cta" style="margin-top: 40px;">
+            <p>由 OpenClaw 自动生成 | 每日更新</p>
+        </div>
     </div>
 </body>
 </html>`;
@@ -355,40 +458,60 @@ async function main() {
         return;
     }
 
-    if (state.lastProcessedAt === data.generatedAt) {
-        console.log('ℹ️ 数据已处理过，跳过');
-        return;
-    }
-
-    console.log(`📊 处理数据: ${data.date}, 共 ${data.projects.length} 个项目`);
-
-    console.log('\n🤖 正在进行 AI 分析...');
-    const insights = await analyzeTrends(data.projects);
-
-    console.log('\n📝 生成 HTML 页面...');
-    const html = generateHtml(data, insights);
     const htmlFile = path.join(OUTPUT_DIR, `github-ai-trending-${data.date}.html`);
-    fs.writeFileSync(htmlFile, html, 'utf8');
-    console.log(`✅ HTML 已生成: ${htmlFile}`);
+    const indexFile = path.join(OUTPUT_DIR, 'index.html');
+    const forceUpdate = !fs.existsSync(indexFile);
+    
+    console.log(`🔍 检查文件状态:`);
+    console.log(`   - HTML 文件: ${fs.existsSync(htmlFile) ? '存在' : '不存在'}`);
+    console.log(`   - 首页文件: ${fs.existsSync(indexFile) ? '存在' : '不存在'}`);
+    console.log(`   - 强制更新: ${forceUpdate ? '是' : '否'}`);
+    console.log(`   - 上次处理时间: ${state.lastProcessedAt}`);
+    console.log(`   - 数据生成时间: ${data.generatedAt}`);
+    
+    if (!forceUpdate && state.lastProcessedAt === data.generatedAt) {
+        console.log('ℹ️ 数据已处理过，跳过');
+    } else {
+        if (forceUpdate) {
+            console.log('⚠️ 强制更新：首页文件不存在');
+        }
+        
+        if (!fs.existsSync(htmlFile)) {
+            console.log(`📊 处理数据: ${data.date}, 共 ${data.projects.length} 个项目`);
 
-    const indexHtml = generateIndexHtml();
-    fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), indexHtml, 'utf8');
-    console.log('✅ 首页已更新');
+            console.log('\n🤖 正在进行 AI 分析...');
+            const insights = await analyzeTrends(data.projects);
 
-    console.log('\n📤 发送飞书通知...');
-    try {
-        const token = await getFeishuToken();
-        await sendFeishuNotification(data.date, token);
-        console.log('✅ 飞书通知已发送');
-    } catch (e) {
-        console.error('❌ 飞书通知失败:', e.message);
+            console.log('\n📝 生成 HTML 页面...');
+            const html = generateHtml(data, insights);
+            fs.writeFileSync(htmlFile, html, 'utf8');
+            console.log(`✅ HTML 已生成: ${htmlFile}`);
+        } else {
+            console.log(`ℹ️ HTML 文件已存在: ${htmlFile}`);
+        }
+
+        console.log('\n📝 更新首页...');
+        const indexHtml = generateIndexHtml();
+        fs.writeFileSync(indexFile, indexHtml, 'utf8');
+        console.log('✅ 首页已更新');
+
+        if (!forceUpdate) {
+            console.log('\n📤 发送飞书通知...');
+            try {
+                const token = await getFeishuToken();
+                await sendFeishuNotification(data.date, token);
+                console.log('✅ 飞书通知已发送');
+            } catch (e) {
+                console.error('❌ 飞书通知失败:', e.message);
+            }
+        }
+
+        console.log('\n🧹 清理过期文件...');
+        cleanupOldFiles();
+
+        state.lastProcessedAt = data.generatedAt;
+        saveState(state);
     }
-
-    console.log('\n🧹 清理过期文件...');
-    cleanupOldFiles();
-
-    state.lastProcessedAt = data.generatedAt;
-    saveState(state);
 
     console.log('\n' + '='.repeat(50));
     console.log('✅ 处理完成！');
