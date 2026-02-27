@@ -42,3 +42,5 @@ jobs:
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "mkdir -p ${{ secrets.SERVER_PATH }}/briefs"
           scp -r briefs/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/briefs/
           scp briefs/data.json ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/data.json
+          # 上传最新的处理器
+          scp scripts/daily-brief-processor.js ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/
