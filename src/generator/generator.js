@@ -316,15 +316,54 @@ async function generateJsonData(projects) {
     generatedAt: now,
     date: date,
     projects: projects.map(p => ({
+      // 基础信息
       repo: p.repo,
+      name: p.name,
+      fullName: p.full_name,
       desc: p.desc,
       descZh: translatedDescs.get(p),
       language: p.language,
+      homepage: p.homepage,
+      topics: p.topics || [],
+      
+      // 统计信息
       stars: p.stars,
-      todayStars: p.todayStars,
       forks: p.forks,
+      watchers: p.watchers,
+      openIssues: p.open_issues,
+      todayStars: p.todayStars,
+      
+      // 时间信息
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+      pushedAt: p.pushed_at,
+      updateTime: p.update_time,
+      createdTime: p.created_time,
+      
+      // 社区信息
+      subscribersCount: p.subscribers_count,
+      hasIssues: p.has_issues,
+      hasWiki: p.has_wiki,
+      hasDiscussions: p.has_discussions,
+      
+      // 许可证
+      license: p.license,
+      
+      // 状态
+      isFork: p.is_fork,
+      isArchived: p.is_archived,
+      defaultBranch: p.default_branch,
+      
+      // GitHub API 详细数据标记
+      hasApiData: p.has_api_data,
+      
+      // AI 标记
       isAI: p.isAI,
+      
+      // 链接
       url: `https://github.com/${p.repo}`,
+      
+      // 分析结果
       analysis: analyzeProject(p)
     })),
     stats: {
