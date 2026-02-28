@@ -31,11 +31,12 @@ async function getUserList(token) {
 }
 
 async function main() {
-  const appId = process.env.FEISHU_APP_ID || "cli_a916e5b5a1b8dcd4";
-  const appSecret = process.env.FEISHU_APP_SECRET || "rXVOqRNAKGtD8edjDwuYmbaWjuJbHSmO";
+  const appId = process.env.FEISHU_APP_ID;
+  const appSecret = process.env.FEISHU_APP_SECRET;
 
   if (!appId || !appSecret) {
     console.error('请设置环境变量 FEISHU_APP_ID 和 FEISHU_APP_SECRET');
+    console.error('可参考 .env.example 文件创建 .env 文件');
     process.exit(1);
   }
 

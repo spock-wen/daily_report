@@ -44,6 +44,7 @@ dist-ssr
 # Project specific
 briefs/
 .trae/
+cache/
 
 # Generated files
 *.html

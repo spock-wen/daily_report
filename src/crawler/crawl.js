@@ -40,22 +40,22 @@ async function main() {
     }
     
     console.log('\n📝 正在生成简报...');
-    const md = generateMarkdown(projects);
+    const md = await generateMarkdown(projects);
     fs.writeFileSync(OUTPUT_FILE, md, 'utf8');
-    console.log(`✅ 简报已生成: ${OUTPUT_FILE}`);
+    console.log(`✅ 简报已生成：${OUTPUT_FILE}`);
     
     const jsonFile = path.join(BRIEF_DIR, 'data.json');
     const jsonData = generateJsonData(projects);
     fs.writeFileSync(jsonFile, JSON.stringify(jsonData, null, 2), 'utf8');
-    console.log(`✅ 数据文件已生成: ${jsonFile}`);
+    console.log(`✅ 数据文件已生成：${jsonFile}`);
     
     if (FEISHU_APP_ID && FEISHU_APP_SECRET && FEISHU_RECEIVE_ID) {
       console.log('\n📤 正在发送到飞书...');
-      const feishuMessage = generateFeishuMessage(projects);
+      const feishuMessage = await generateFeishuMessage(projects);
       await sendMessage(FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_RECEIVE_ID, FEISHU_RECEIVE_ID_TYPE, feishuMessage);
     } else {
       console.log('\n⚠️ 未配置飞书凭证，跳过推送');
-      console.log('提示: 请设置环境变量 FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_RECEIVE_ID');
+      console.log('提示：请设置环境变量 FEISHU_APP_ID, FEISHU_APP_SECRET, FEISHU_RECEIVE_ID');
     }
     
     console.log('\n' + '='.repeat(50));

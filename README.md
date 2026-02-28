@@ -29,22 +29,19 @@ npm run crawl
 
 ## ⚙️ 配置说明
 
-### 环境变量配置
+### GitHub Secrets 配置
 
-创建 `.env` 文件或在环境中设置以下变量：
+在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中添加以下 Secrets：
 
-```env
-# 飞书配置（必填，用于推送消息）
-FEISHU_APP_ID=your-app-id
-FEISHU_APP_SECRET=your-app-secret
-FEISHU_RECEIVE_ID=your-open-id
-FEISHU_RECEIVE_ID_TYPE=open_id
-
-# 服务器配置（用于部署）
-SERVER_USER=root
-SERVER_IP=your-server-ip
-SERVER_PATH=/root/github_daily_report
-```
+| Secret 名称 | 说明 | 如何获取 |
+|------------|------|----------|
+| `FEISHU_APP_ID` | 飞书应用 ID | 飞书开放平台 → 应用详情 → 凭证与基础信息 |
+| `FEISHU_APP_SECRET` | 飞书应用密钥 | 飞书开放平台 → 应用详情 → 凭证与基础信息（点击查看） |
+| `FEISHU_RECEIVE_ID` | 接收者 Open ID | 运行 `npm run get-openid` 或在飞书中查看 |
+| `SERVER_USER` | 服务器登录用户名 | 你的服务器登录用户名，如 `root` |
+| `SERVER_IP` | 服务器 IP 地址 | 你的云服务器公网 IP |
+| `SERVER_PATH` | 部署路径 | 服务器上存放项目的目录，如 `/root/github_daily_report` |
+| `SERVER_SSH_KEY` | SSH 私钥 | 用于 GitHub Actions 登录服务器的 SSH 私钥 |
 
 ### 如何获取配置信息
 
@@ -232,10 +229,11 @@ on:
 
 ## 🤝 与 OpenClaw 集成
 
-本项目生成的 `data.json` 文件可供 OpenClaw 等系统读取，进行：
-- AI 趋势分析
-- 增强版 HTML 页面生成
-- 更详细的消息推送
+本项目生成的 `data.json` 文件可供 OpenClaw 等外部系统使用：
+
+- 项目只负责生成和推送 `data.json`
+- OpenClaw 在服务器上读取数据后进行 AI 分析、翻译等操作
+- 两个系统独立运行，松耦合集成
 
 ## 📝 License
 

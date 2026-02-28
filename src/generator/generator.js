@@ -1,86 +1,69 @@
 const { formatDate, formatStars } = require('../utils/utils');
 const { analyzeProject, detectProjectType } = require('./analyzer');
+const translate = require('google-translate-api');
 
-// 扩展的翻译字典
-const TRANSLATIONS = {
-  // Agent 相关
-  'An open-source SuperAgent harness that researches, codes, and creates. With the help of sandboxes, memories, tools, skills and subagents, it handles different levels of tasks that could take minutes to hours.': '一个开源的超级智能体工具，可以进行研究、编码和创作。借助沙箱、记忆、工具、技能和子智能体，它可以处理从几分钟到几小时的不同级别任务。',
-  'Memory for 24/7 proactive agents like openclaw (moltbot, clawdbot).': '为 24/7 主动智能体（如 openclaw、moltbot、clawdbot）提供记忆功能。',
-  'Bash is all you need - A nano Claude Code–like agent, built from 0 to 1': 'Bash 就是你所需要的一切 - 一个类似 Claude Code 的微型智能体，从零构建。',
-  
-  // RAG / 向量相关
-  'RuVector is a High Performance, Real-Time, Self-Learning, Vector Graph Neural Network, and Database built in Rust.': 'RuVector 是一个用 Rust 构建的高性能、实时、自学习的向量图神经网络和数据库。',
-  'PageIndex: Document Index for Vectorless, Reasoning-based RAG': '📑 PageIndex：面向无向量、基于推理的 RAG 的文档索引',
-  
-  // LLM / 训练相关
-  'Ongoing research training transformer models at scale': '正在进行大规模训练 Transformer 模型的研究',
-  
-  // 语音相关
-  'Fast and accurate automatic speech recognition (ASR) for edge devices': '针对边缘设备的快速准确自动语音识别(ASR)',
-  
-  // 开发工具
-  'A cross-platform desktop All-in-One assistant tool for Claude Code, Codex, OpenCode & Gemini CLI.': 'Claude Code、Codex、OpenCode 和 Gemini CLI 的跨平台桌面一体化助手工具。',
-  'The leading agent orchestration platform for Claude. Deploy intelligent multi-agent swarms, coordinate autonomous workflows, and build conversational AI systems. Features enterprise-grade architecture, distributed swarm intelligence, RAG integration, and native Claude Code / Codex Integration': '🌊 领先的 Claude 智能体编排平台。部署智能多智能体集群，协调自主工作流，构建对话式 AI 系统。具有企业级架构、分布式集群智能、RAG 集成以及原生 Claude Code / Codex 集成',
-  
-  // 教程/学习
-  '《从零开始构建智能体》——从零开始的智能体原理与实践教程': '📚 《从零开始构建智能体》——从零开始的智能体原理与实践教程',
-  
-  // 基础设施
-  'Development at the speed of light': '以光速进行开发',
-  'Smart infrastructure for agentic applications - Plano is a purpose-built AI-native proxy and data plane that handles the undifferentiated heavy lifting involved in building agents (via any AI framework).': '智能体应用的交付基础设施 - Plano 是一个原生 AI 代理和数据平面，负责处理构建智能体所需的底层工作（通过任何 AI 框架）。',
-  
-  // 综合资源
-  '程序员鱼皮的 AI 资源大全 + Vibe Coding 零基础教程，分享大模型选择指南（DeepSeek / GPT / Gemini / Claude）、最新 AI 资讯、Prompt 提示词大全、AI 知识百科（RAG / MCP / A2A）、AI 编程教程、AI 工具用法（Cursor / Claude Code / OpenClaw / TRAE / Lovable / Agent Skills）、AI 开发框架教程（Spring AI / LangChain）、AI 产品变现指南，帮你快速掌握 AI 技术，走在时代前沿。': '程序员鱼皮的 AI 资源大全 + Vibe Coding 零基础教程，分享大模型选择指南、最新 AI 资讯、Prompt 提示词大全、AI 知识百科、AI 编程教程、AI 工具用法、AI 开发框架教程、AI 产品变现指南，帮你快速掌握 AI 技术，走在时代前沿。'
-};
+// 翻译缓存（避免重复翻译相同内容）
+const translationCache = new Map();
 
-function translateDescription(desc) {
+// 翻译描述（使用免费的 Google 翻译）
+async function translateDescription(desc) {
   if (!desc) return '';
   
   // 清理 HTML 实体
   const cleanDesc = desc.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
   
-  // 1. 直接匹配（0 tokens）
-  if (TRANSLATIONS[cleanDesc]) {
-    return TRANSLATIONS[cleanDesc];
+  // 1. 检查是否是中文（已经有中文描述）
+  if (/[\u4e00-\u9fa5]/.test(cleanDesc)) {
+    return cleanDesc;
   }
   
-  // 2. 关键词匹配（0 tokens）- 基于项目类型
-  const keywords = [
-    { pattern: /speech|asr|voice|audio/i, translation: '语音识别/音频处理工具' },
-    { pattern: /agent|orchestration|workflow/i, translation: '智能体编排/工作流工具' },
-    { pattern: /vector|rag|retrieval|embedding/i, translation: '向量检索/RAG 工具' },
-    { pattern: /llm|language model|transformer/i, translation: '大语言模型工具' },
-    { pattern: /cli|terminal|command/i, translation: '命令行工具' },
-    { pattern: /sandbox|container|runtime/i, translation: '沙箱/容器工具' },
-    { pattern: /tutorial|guide|learn|course/i, translation: '教程/学习资源' },
-    { pattern: /api|sdk|library|framework/i, translation: '开发框架/库' },
-  ];
-  
-  for (const { pattern, translation } of keywords) {
-    if (pattern.test(cleanDesc)) {
-      return translation;
-    }
+  // 2. 检查缓存
+  if (translationCache.has(cleanDesc)) {
+    return translationCache.get(cleanDesc);
   }
   
-  // 3. 部分匹配（0 tokens）- 智能匹配前 30 个字符
-  for (const [key, value] of Object.entries(TRANSLATIONS)) {
-    const cleanKey = key.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-    const matchLength = Math.min(30, cleanDesc.length, cleanKey.length);
-    if (cleanDesc.substring(0, matchLength) === cleanKey.substring(0, matchLength)) {
-      return value;
-    }
-    // 或者包含关系
-    if (cleanDesc.length > 50 && cleanKey.length > 50 && 
-        (cleanDesc.includes(cleanKey.substring(0, 50)) || cleanKey.includes(cleanDesc.substring(0, 50)))) {
-      return value;
-    }
+  // 3. 调用 Google 翻译（免费）
+  try {
+    const result = await translate(cleanDesc, { to: 'zh-CN' });
+    const translated = result.text;
+    
+    // 缓存翻译结果
+    translationCache.set(cleanDesc, translated);
+    
+    return translated;
+  } catch (error) {
+    console.error('翻译失败，返回原文:', error.message);
+    // 翻译失败时返回原文
+    return cleanDesc;
   }
-  
-  // 4. 未匹配的描述，保留英文（由 OpenClaw 批量翻译）
-  return cleanDesc;
 }
 
-function generateMarkdown(projects) {
+// 批量翻译描述（用于飞书通知）
+async function batchTranslateDescriptions(descriptions) {
+  const translatedMap = new Map();
+  
+  for (const desc of descriptions) {
+    if (!desc || /[\u4e00-\u9fa5]/.test(desc)) {
+      translatedMap.set(desc, desc);
+      continue;
+    }
+    
+    try {
+      const result = await translate(desc, { to: 'zh-CN' });
+      translatedMap.set(desc, result.text);
+    } catch (error) {
+      console.error('翻译失败:', desc.substring(0, 30), error.message);
+      translatedMap.set(desc, desc);
+    }
+    
+    // 避免请求过快，稍作延迟
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  return translatedMap;
+}
+
+async function generateMarkdown(projects) {
   const date = formatDate(new Date());
   const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
   
@@ -112,18 +95,25 @@ function generateMarkdown(projects) {
   
   md += `## 🔥 重点项目分析\n\n`;
   
-  projects.forEach((project, index) => {
+  // 批量翻译所有项目描述
+  const allDescs = projects.map(p => p.desc);
+  const translatedDescs = await batchTranslateDescriptions(allDescs);
+  
+  // 只展示前 5 个项目的详细信息
+  const displayCount = Math.min(5, projects.length);
+  for (let i = 0; i < displayCount; i++) {
+    const project = projects[i];
     const analysis = analyzeProject(project);
     const aiTag = project.isAI ? ' 🤖' : '';
     
-    md += `### ${index + 1}. [${project.repo}](https://github.com/${project.repo})${aiTag}\n\n`;
+    md += `### ${i + 1}. [${project.repo}](https://github.com/${project.repo})${aiTag}\n\n`;
     
     // 项目类型标签
     md += `**类型**: ${analysis.typeName}\n\n`;
     
-    // 描述
+    // 描述（使用 Google 翻译）
     if (project.desc) {
-      const translatedDesc = translateDescription(project.desc);
+      const translatedDesc = translatedDescs.get(project.desc) || project.desc;
       md += `**描述**: ${translatedDesc}\n\n`;
     }
     
@@ -156,7 +146,14 @@ function generateMarkdown(projects) {
     }
     
     md += `---\n\n`;
-  });
+  }
+  
+  // 添加提示：还有更多项目
+  if (projects.length > displayCount) {
+    md += `## 📋 更多项目\n\n`;
+    md += `今日还有 **${projects.length - displayCount}** 个热门项目，详细数据请访问服务器页面查看完整列表。\n\n`;
+    md += `---\n\n`;
+  }
   
   // 技术趋势洞察占位符 - 由 OpenClaw 生成
   md += `## 📌 技术趋势洞察\n\n`;

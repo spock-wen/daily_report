@@ -18,7 +18,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "google-translate-api": "^2.3.0"
   },
   "engines": {
     "node": ">=18.0.0"

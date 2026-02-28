@@ -28,7 +28,7 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_RECEIVE_ID: ${{ secrets.FEISHU_RECEIVE_ID }}
-          FEISHU_RECEIVE_ID_TYPE: ${{ secrets.FEISHU_RECEIVE_ID_TYPE }}
+          FEISHU_RECEIVE_ID_TYPE: open_id
       
       - name: Setup SSH key
         run: |
@@ -39,8 +39,8 @@ jobs:
       
       - name: Deploy to server
         run: |
+          # 同步数据文件到服务器
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "mkdir -p ${{ secrets.SERVER_PATH }}/briefs"
           scp -r briefs/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/briefs/
           scp briefs/data.json ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/data.json
-          # 上传最新的处理器
-          scp scripts/daily-brief-processor.js ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/
+          echo "✅ 数据已同步到服务器，OpenClaw 将自动处理"
