@@ -118,7 +118,7 @@ async function analyzeTrends(summary) {
     const prompt = generateCompactPrompt(summary);
     
     console.log('🤖 调用 AI 生成趋势洞察...');
-    console.log(`📝 Prompt 长度: ${prompt.length} 字符`);
+    console.log(`📝 Prompt 长度：${prompt.length} 字符`);
     
     try {
         const content = await callBailianAPI(prompt);
@@ -126,6 +126,56 @@ async function analyzeTrends(summary) {
     } catch (e) {
         console.error('AI 分析失败:', e.message);
         return generateFallbackInsights(summary);
+    }
+}
+
+// 批量翻译未匹配的描述
+async function batchTranslateDescriptions(projects) {
+    const untranslated = projects.filter(p => p.desc && !p.descZh);
+    
+    if (untranslated.length === 0) {
+        console.log('✅ 所有描述已翻译');
+        return projects;
+    }
+    
+    console.log(`📝 发现 ${untranslated.length} 个未翻译的描述，正在批量翻译...`);
+    
+    // 构建批量翻译 prompt
+    const descriptions = untranslated.map((p, i) => `${i + 1}. ${p.desc}`).join('\n');
+    const prompt = `请翻译以下 GitHub 项目描述为简洁的中文（保持技术术语准确）：
+${descriptions}
+
+输出格式：
+1. 中文翻译
+2. 中文翻译
+...
+
+只输出翻译结果，不要解释。`;
+    
+    try {
+        const translations = await callBailianAPI(prompt);
+        console.log(`📄 翻译结果长度：${translations.length} 字符`);
+        
+        // 解析翻译结果
+        const translationLines = translations.split('\n').filter(line => line.trim());
+        const translationMap = {};
+        
+        untranslated.forEach((project, index) => {
+            const translation = translationLines[index] || project.desc;
+            translationMap[project.desc] = translation.replace(/^\d+\.\s*/, '').trim();
+        });
+        
+        // 更新项目的 descZh
+        const translatedProjects = projects.map(p => ({
+            ...p,
+            descZh: p.descZh || translationMap[p.desc] || p.desc
+        }));
+        
+        console.log(`✅ 翻译完成：${untranslated.length} 个描述`);
+        return translatedProjects;
+    } catch (e) {
+        console.error('批量翻译失败:', e.message);
+        return projects;
     }
 }
 
@@ -877,7 +927,11 @@ async function main() {
         return;
     }
 
-    console.log(`📊 处理数据: ${data.date}, 共 ${data.projects.length} 个项目`);
+    console.log(`📊 处理数据：${data.date}, 共 ${data.projects.length} 个项目`);
+
+    // 批量翻译未匹配的描述
+    console.log('\n🌐 正在翻译项目描述...');
+    data.projects = await batchTranslateDescriptions(data.projects);
 
     // 使用 summary 数据生成洞察，节省 tokens
     const summary = data.summary;

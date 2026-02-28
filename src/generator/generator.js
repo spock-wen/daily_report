@@ -36,24 +36,47 @@ const TRANSLATIONS = {
 function translateDescription(desc) {
   if (!desc) return '';
   
-  // 直接匹配
-  if (TRANSLATIONS[desc]) {
-    return TRANSLATIONS[desc];
-  }
-  
-  // 清理 HTML 实体后匹配
+  // 清理 HTML 实体
   const cleanDesc = desc.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+  
+  // 1. 直接匹配（0 tokens）
   if (TRANSLATIONS[cleanDesc]) {
     return TRANSLATIONS[cleanDesc];
   }
   
-  // 部分匹配（前100个字符）
+  // 2. 关键词匹配（0 tokens）- 基于项目类型
+  const keywords = [
+    { pattern: /speech|asr|voice|audio/i, translation: '语音识别/音频处理工具' },
+    { pattern: /agent|orchestration|workflow/i, translation: '智能体编排/工作流工具' },
+    { pattern: /vector|rag|retrieval|embedding/i, translation: '向量检索/RAG 工具' },
+    { pattern: /llm|language model|transformer/i, translation: '大语言模型工具' },
+    { pattern: /cli|terminal|command/i, translation: '命令行工具' },
+    { pattern: /sandbox|container|runtime/i, translation: '沙箱/容器工具' },
+    { pattern: /tutorial|guide|learn|course/i, translation: '教程/学习资源' },
+    { pattern: /api|sdk|library|framework/i, translation: '开发框架/库' },
+  ];
+  
+  for (const { pattern, translation } of keywords) {
+    if (pattern.test(cleanDesc)) {
+      return translation;
+    }
+  }
+  
+  // 3. 部分匹配（0 tokens）- 智能匹配前 30 个字符
   for (const [key, value] of Object.entries(TRANSLATIONS)) {
-    if (cleanDesc.includes(key.substring(0, 50)) || key.includes(cleanDesc.substring(0, 50))) {
+    const cleanKey = key.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    const matchLength = Math.min(30, cleanDesc.length, cleanKey.length);
+    if (cleanDesc.substring(0, matchLength) === cleanKey.substring(0, matchLength)) {
+      return value;
+    }
+    // 或者包含关系
+    if (cleanDesc.length > 50 && cleanKey.length > 50 && 
+        (cleanDesc.includes(cleanKey.substring(0, 50)) || cleanKey.includes(cleanDesc.substring(0, 50)))) {
       return value;
     }
   }
   
+  // 4. 未匹配的描述，保留英文（由 OpenClaw 批量翻译）
   return cleanDesc;
 }
 
