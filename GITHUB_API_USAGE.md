@@ -13,24 +13,22 @@
 
 ## 使用方法
 
-### 1. 获取 GitHub Token
+### GitHub Action 中运行（推荐）
 
-访问 [GitHub Personal Access Tokens](https://github.com/settings/tokens)，生成一个新的 Personal Access Token。
+**无需任何配置！** GitHub Action 会自动提供 `GITHUB_TOKEN` 环境变量。
 
-建议勾选的权限：
-- `public_repo` - 访问公开仓库信息
-- `repo:status` - 访问仓库状态
+系统会自动检测并使用这个 token 来获取详细的项目信息。
 
-### 2. 设置环境变量
+### 本地环境中测试
 
-在 GitHub Action 中设置环境变量：
+如果需要本地测试，可以：
 
-```yaml
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+1. 访问 [GitHub Personal Access Tokens](https://github.com/settings/tokens)，生成一个新的 Personal Access Token
+2. 建议勾选的权限：
+   - `public_repo` - 访问公开仓库信息
+   - `repo:status` - 访问仓库状态
 
-或者在本地环境中设置：
+3. 设置环境变量：
 
 ```bash
 # Linux/macOS
@@ -40,29 +38,15 @@ export GITHUB_TOKEN=your_token_here
 $env:GITHUB_TOKEN="your_token_here"
 ```
 
-### 3. 运行简报生成
-
-设置好 GITHUB_TOKEN 后，运行：
+4. 运行简报生成：
 
 ```bash
 npm run crawl
 ```
 
-系统会自动检测 GITHUB_TOKEN 环境变量，如果存在则会获取详细的项目信息。
-
 ## 输出示例
 
-### 不带 GITHUB_TOKEN
-
-```
-🦞 大龙虾 GitHub 简报生成器
-==================================================
-...
-⚠️ 未设置 GITHUB_TOKEN，跳过详细信息获取
-提示：设置 GITHUB_TOKEN 环境变量可获取更新时间、Commits 等详细信息
-```
-
-### 带 GITHUB_TOKEN
+### GitHub Action 中（自动使用 GITHUB_TOKEN）
 
 ```
 🦞 大龙虾 GitHub 简报生成器
@@ -70,6 +54,16 @@ npm run crawl
 ...
 📡 正在获取 GitHub API 详细数据...
 ✅ 详细信息获取完成
+```
+
+### 本地环境（未设置 GITHUB_TOKEN）
+
+```
+🦞 大龙虾 GitHub 简报生成器
+==================================================
+...
+⚠️ 未设置 GITHUB_TOKEN，跳过详细信息获取
+提示：在 GitHub Action 中运行时会自动提供 GITHUB_TOKEN
 ```
 
 ### 生成的简报内容（带详细信息）
@@ -130,6 +124,8 @@ node src/crawler/crawl.js
 
 ## 在 GitHub Action 中使用
 
+GitHub Action 会自动提供 `GITHUB_TOKEN`，无需额外配置：
+
 ```yaml
 jobs:
   generate-brief:
@@ -146,27 +142,25 @@ jobs:
         run: npm install
         
       - name: Generate Brief
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run crawl
+        # GITHUB_TOKEN 会自动提供，无需显式设置
 ```
 
 ## 故障排除
 
-### 问题：API 速率限制错误
+### 问题：本地运行时提示"未设置 GITHUB_TOKEN"
 
-**解决方案**: 设置 GITHUB_TOKEN 环境变量
+**解决方案**: 这是正常的。GitHub Action 运行时会自动提供 GITHUB_TOKEN，本地测试时才需要手动设置。
 
 ### 问题：获取详细信息失败
 
 **解决方案**: 
-1. 检查 Token 是否有效
-2. 确认 Token 权限是否正确
-3. 查看错误日志获取详细信息
+1. 检查网络连接是否正常
+2. 查看错误日志获取详细信息
+3. GitHub API 可能有临时的速率限制
 
 ### 问题：执行时间过长
 
 **解决方案**: 
 1. 减少 `max_display_projects` 配置项
-2. 使用缓存机制
-3. 考虑异步获取详细信息
+2. 考虑使用缓存机制

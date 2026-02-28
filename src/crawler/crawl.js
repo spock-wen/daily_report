@@ -18,8 +18,8 @@ const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
 const FEISHU_RECEIVE_ID = process.env.FEISHU_RECEIVE_ID;
 const FEISHU_RECEIVE_ID_TYPE = process.env.FEISHU_RECEIVE_ID_TYPE || 'chat_id';
 
-// GitHub Token (可选，用于提高 API 速率限制)
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+// GitHub Token (GitHub Action 默认提供 GITHUB_TOKEN 环境变量)
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || null;
 
 async function main() {
   console.log('🦞 大龙虾 GitHub 简报生成器');
