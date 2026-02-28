@@ -181,6 +181,24 @@ function generateTrendAnalysis(project) {
     trends.push('💡 新兴项目，具有良好发展潜力');
   }
   
+  // 如果有 GitHub API 数据，添加更详细的信息
+  if (project.has_api_data) {
+    // 添加更新时间
+    if (project.update_time) {
+      trends.push(`🕒 最近更新时间：${project.update_time}`);
+    }
+    
+    // 添加 Commits 信息
+    if (project.commits_last_30_days) {
+      trends.push(`📝 近 30 天 Commits：${project.commits_last_30_days}`);
+    }
+    
+    // 添加贡献者信息
+    if (project.contributors_count) {
+      trends.push(`👥 贡献者数量：${project.contributors_count}+`);
+    }
+  }
+  
   // 根据项目类型添加特定趋势
   const projectType = detectProjectType(project.repo, project.desc);
   const typeTrends = {

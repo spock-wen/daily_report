@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { fetchTrending } = require('./fetcher');
 const { parseTrending } = require('./parser');
+const { enhanceProjects } = require('./github_api');
 const { generateMarkdown, generateFeishuMessage, generateJsonData } = require('../generator/generator');
 const { sendMessage } = require('../generator/feishu');
 const config = require('../config/config');
@@ -16,6 +17,9 @@ const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
 const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
 const FEISHU_RECEIVE_ID = process.env.FEISHU_RECEIVE_ID;
 const FEISHU_RECEIVE_ID_TYPE = process.env.FEISHU_RECEIVE_ID_TYPE || 'chat_id';
+
+// GitHub Token (可选，用于提高 API 速率限制)
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 async function main() {
   console.log('🦞 大龙虾 GitHub 简报生成器');
@@ -33,10 +37,20 @@ async function main() {
     const html = await fetchTrending();
     
     console.log('\n🔍 正在解析项目信息...');
-    const projects = parseTrending(html);
+    let projects = parseTrending(html);
     
     if (projects.length === 0) {
       throw new Error('未解析到任何项目，请检查 GitHub Trending 页面结构是否变化');
+    }
+    
+    // 如果配置了 GITHUB_TOKEN，获取更详细的项目信息
+    if (GITHUB_TOKEN) {
+      console.log('\n📡 正在获取 GitHub API 详细数据...');
+      projects = await enhanceProjects(projects, GITHUB_TOKEN);
+      console.log('✅ 详细信息获取完成');
+    } else {
+      console.log('\n⚠️ 未设置 GITHUB_TOKEN，跳过详细信息获取');
+      console.log('提示：设置 GITHUB_TOKEN 环境变量可获取更新时间、Commits 等详细信息');
     }
     
     console.log('\n📝 正在生成简报...');
