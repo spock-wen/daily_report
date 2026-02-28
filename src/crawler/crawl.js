@@ -45,7 +45,7 @@ async function main() {
     console.log(`✅ 简报已生成：${OUTPUT_FILE}`);
     
     const jsonFile = path.join(BRIEF_DIR, 'data.json');
-    const jsonData = generateJsonData(projects);
+    const jsonData = await generateJsonData(projects);
     fs.writeFileSync(jsonFile, JSON.stringify(jsonData, null, 2), 'utf8');
     console.log(`✅ 数据文件已生成：${jsonFile}`);
     

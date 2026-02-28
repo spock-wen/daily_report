@@ -194,7 +194,7 @@ function analyzeDomains(projects) {
   return domains;
 }
 
-function generateFeishuMessage(projects) {
+async function generateFeishuMessage(projects) {
   const date = formatDate(new Date());
   
   let message = `# 🚀 GitHub AI 项目每日简报\n`;
@@ -211,18 +211,19 @@ function generateFeishuMessage(projects) {
   
   message += `## 🔥 Top 5 热门项目\n\n`;
   
-  projects.slice(0, 5).forEach((project, index) => {
+  for (let i = 0; i < Math.min(5, projects.length); i++) {
+    const project = projects[i];
     const analysis = analyzeProject(project);
     const aiTag = project.isAI ? ' 🤖' : '';
-    message += `**${index + 1}. [${project.repo}](https://github.com/${project.repo})**${aiTag}\n`;
+    message += `**${i + 1}. [${project.repo}](https://github.com/${project.repo})**${aiTag}\n`;
     
     if (project.desc) {
-      const translatedDesc = translateDescription(project.desc);
+      const translatedDesc = await translateDescription(project.desc);
       message += `> ${translatedDesc.substring(0, 60)}${translatedDesc.length > 60 ? '...' : ''}\n`;
     }
     
     message += `类型: ${analysis.typeName} | 语言: ${project.language} | 今日: ⭐ ${formatStars(project.todayStars)}\n\n`;
-  });
+  }
   
   message += `---\n`;
   message += `💡 详细数据和 AI 趋势分析请访问服务器页面\n`;
@@ -231,14 +232,14 @@ function generateFeishuMessage(projects) {
 }
 
 // 生成极简的 summary 数据，用于给 AI 分析
-function generateSummaryForAI(projects) {
+async function generateSummaryForAI(projects) {
   const typeCount = {};
   const langCount = {};
   let totalTodayStars = 0;
   let maxTodayStars = 0;
   let topProject = null;
   
-  const projectSummaries = projects.map(p => {
+  const projectSummaries = await Promise.all(projects.map(async p => {
     const type = detectProjectType(p.repo, p.desc);
     typeCount[type] = (typeCount[type] || 0) + 1;
     langCount[p.language] = (langCount[p.language] || 0) + 1;
@@ -250,15 +251,16 @@ function generateSummaryForAI(projects) {
       topProject = p.repo;
     }
     
+    const translatedDesc = await translateDescription(p.desc);
     return {
       name: p.repo,
       type: type,
       lang: p.language,
       stars: p.stars,
       todayStars: p.todayStars,
-      desc: translateDescription(p.desc).substring(0, 50) // 只取前50字
+      desc: translatedDesc.substring(0, 50) // 只取前50字
     };
-  });
+  }));
   
   // 找出最热门的类型和语言
   const topType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0];
@@ -278,7 +280,7 @@ function generateSummaryForAI(projects) {
   };
 }
 
-function generateJsonData(projects) {
+async function generateJsonData(projects) {
   const now = new Date().toISOString();
   const date = formatDate(new Date());
   
@@ -286,13 +288,19 @@ function generateJsonData(projects) {
     return sum + (parseInt(p.stars.replace(/,/g, '')) || 0);
   }, 0);
   
+  // 批量翻译项目描述
+  const translatedDescs = new Map();
+  for (const project of projects) {
+    translatedDescs.set(project, await translateDescription(project.desc));
+  }
+  
   return {
     generatedAt: now,
     date: date,
     projects: projects.map(p => ({
       repo: p.repo,
       desc: p.desc,
-      descZh: translateDescription(p.desc),
+      descZh: translatedDescs.get(p),
       language: p.language,
       stars: p.stars,
       todayStars: p.todayStars,
@@ -307,7 +315,7 @@ function generateJsonData(projects) {
       avgStars: `${Math.round(totalStars / projects.length / 1000 * 10) / 10}k`
     },
     // 新增：给 AI 分析的极简 summary
-    summary: generateSummaryForAI(projects)
+    summary: await generateSummaryForAI(projects)
   };
 }
 
