@@ -114,24 +114,17 @@ ${projectList}
 用中文,Markdown格式,简洁专业。`;
 }
 
-async function analyzeTrends(summary) {
-    const prompt = generateCompactPrompt(summary);
-    
-    console.log('🤖 调用 AI 生成趋势洞察...');
-    console.log(`📝 Prompt 长度：${prompt.length} 字符`);
-    
-    try {
-        const content = await callBailianAPI(prompt);
-        return content;
-    } catch (e) {
-        console.error('AI 分析失败:', e.message);
-        return generateFallbackInsights(summary);
-    }
-}
 
 // 批量翻译未匹配的描述
 async function batchTranslateDescriptions(projects) {
-    const untranslated = projects.filter(p => p.desc && !p.descZh);
+    // 过滤出未翻译或翻译等于原文的描述
+    const untranslated = projects.filter(p => {
+        if (!p.desc) return false;
+        if (!p.descZh) return true;
+        // 如果 descZh 等于 desc（英文原文），也需要翻译
+        if (p.descZh === p.desc) return true;
+        return false;
+    });
     
     if (untranslated.length === 0) {
         console.log('✅ 所有描述已翻译');
@@ -168,7 +161,7 @@ ${descriptions}
         // 更新项目的 descZh
         const translatedProjects = projects.map(p => ({
             ...p,
-            descZh: p.descZh || translationMap[p.desc] || p.desc
+            descZh: (p.descZh && p.descZh !== p.desc) ? p.descZh : (translationMap[p.desc] || p.desc)
         }));
         
         console.log(`✅ 翻译完成：${untranslated.length} 个描述`);
@@ -176,6 +169,21 @@ ${descriptions}
     } catch (e) {
         console.error('批量翻译失败:', e.message);
         return projects;
+    }
+}
+
+async function analyzeTrends(summary) {
+    const prompt = generateCompactPrompt(summary);
+    
+    console.log('🤖 调用 AI 生成趋势洞察...');
+    console.log(`📝 Prompt 长度: ${prompt.length} 字符`);
+    
+    try {
+        const content = await callBailianAPI(prompt);
+        return content;
+    } catch (e) {
+        console.error('AI 分析失败:', e.message);
+        return generateFallbackInsights(summary);
     }
 }
 
@@ -927,11 +935,7 @@ async function main() {
         return;
     }
 
-    console.log(`📊 处理数据：${data.date}, 共 ${data.projects.length} 个项目`);
-
-    // 批量翻译未匹配的描述
-    console.log('\n🌐 正在翻译项目描述...');
-    data.projects = await batchTranslateDescriptions(data.projects);
+    console.log(`📊 处理数据: ${data.date}, 共 ${data.projects.length} 个项目`);
 
     // 使用 summary 数据生成洞察，节省 tokens
     const summary = data.summary;
