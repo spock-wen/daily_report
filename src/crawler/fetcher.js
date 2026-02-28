@@ -133,7 +133,13 @@ async function fetchTrending(maxRetries = 3) {
       }
       
       // 检查是否包含 GitHub Trending 特征
-      if (!html.includes('github-trending')) {
+      // 由于 GitHub 页面结构可能变化，使用多个特征进行检查
+      const hasTrendingFeatures = html.includes('Trending repositories') || 
+                                 html.includes('trending?since=') ||
+                                 html.includes('/trending') ||
+                                 (html.includes('repository') && html.includes('stars'));
+      
+      if (!hasTrendingFeatures) {
         throw new Error('HTML 内容不包含 GitHub Trending 特征');
       }
       
