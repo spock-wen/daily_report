@@ -1,11 +1,11 @@
 const { formatDate, formatStars } = require('../utils/utils');
 const { analyzeProject, detectProjectType } = require('./analyzer');
-const translate = require('google-translate-api');
+const fetch = require('node-fetch');
 
 // 翻译缓存（避免重复翻译相同内容）
 const translationCache = new Map();
 
-// 翻译描述（使用免费的 Google 翻译）
+// 翻译描述（使用 MyMemory Translation API - 免费无需 API key）
 async function translateDescription(desc) {
   if (!desc) return '';
   
@@ -22,15 +22,32 @@ async function translateDescription(desc) {
     return translationCache.get(cleanDesc);
   }
   
-  // 3. 调用 Google 翻译（免费）
+  // 3. 使用 MyMemory Translation API（免费，无需 API key）
+  // API 文档：https://mymemory.translated.net/doc/spec.php
   try {
-    const result = await translate(cleanDesc, { to: 'zh-CN' });
-    const translated = result.text;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanDesc)}&langpair=en|zh-CN`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
     
-    // 缓存翻译结果
-    translationCache.set(cleanDesc, translated);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
     
-    return translated;
+    const data = await response.json();
+    
+    if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+      const translated = data.responseData.translatedText;
+      
+      // 缓存翻译结果
+      translationCache.set(cleanDesc, translated);
+      
+      return translated;
+    } else {
+      throw new Error(data.responseDetails || 'Translation failed');
+    }
   } catch (error) {
     console.error('翻译失败，返回原文:', error.message);
     // 翻译失败时返回原文
@@ -49,8 +66,9 @@ async function batchTranslateDescriptions(descriptions) {
     }
     
     try {
-      const result = await translate(desc, { to: 'zh-CN' });
-      translatedMap.set(desc, result.text);
+      // 直接使用 translateDescription 函数，它已经包含了缓存和错误处理
+      const translated = await translateDescription(desc);
+      translatedMap.set(desc, translated);
     } catch (error) {
       console.error('翻译失败:', desc.substring(0, 30), error.message);
       translatedMap.set(desc, desc);
