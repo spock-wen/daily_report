@@ -1,14 +1,15 @@
-# 🦞 GitHub AI 项目每日简报系统
+# 🦞 GitHub Trending 每日简报系统
 
-自动抓取 GitHub Trending 中的 AI 相关项目，生成每日简报并推送到飞书。
+自动抓取 GitHub Trending 热门项目，智能分析并生成每日简报，支持飞书推送。
 
 ## ✨ 功能特性
 
 - 🔍 **自动抓取**：每日自动抓取 GitHub Trending 热门项目
-- 🤖 **AI 识别**：智能识别 AI 相关项目
-- 📝 **简报生成**：生成 Markdown 格式的详细简报
+- 🤖 **智能分析**：基于规则的项目分类和分析系统（Agent/RAG/LLM/语音处理等）
+- 📝 **简报生成**：生成 Markdown 格式的详细简报，包含核心功能、适用场景和趋势分析
 - 📱 **飞书推送**：支持推送到飞书机器人
 - 📊 **JSON 数据**：输出结构化数据供其他系统使用
+- 💾 **缓存机制**：支持本地缓存，提升访问速度并作为备用数据源
 
 ## 🚀 快速开始
 
@@ -29,19 +30,22 @@ npm run crawl
 
 ## ⚙️ 配置说明
 
-### GitHub Secrets 配置
+### 环境变量配置
 
-在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中添加以下 Secrets：
+创建 `.env` 文件或在环境中设置以下变量：
 
-| Secret 名称 | 说明 | 如何获取 |
-|------------|------|----------|
-| `FEISHU_APP_ID` | 飞书应用 ID | 飞书开放平台 → 应用详情 → 凭证与基础信息 |
-| `FEISHU_APP_SECRET` | 飞书应用密钥 | 飞书开放平台 → 应用详情 → 凭证与基础信息（点击查看） |
-| `FEISHU_RECEIVE_ID` | 接收者 Open ID | 运行 `npm run get-openid` 或在飞书中查看 |
-| `SERVER_USER` | 服务器登录用户名 | 你的服务器登录用户名，如 `root` |
-| `SERVER_IP` | 服务器 IP 地址 | 你的云服务器公网 IP |
-| `SERVER_PATH` | 部署路径 | 服务器上存放项目的目录，如 `/root/github_daily_report` |
-| `SERVER_SSH_KEY` | SSH 私钥 | 用于 GitHub Actions 登录服务器的 SSH 私钥 |
+```env
+# 飞书配置（必填，用于推送消息）
+FEISHU_APP_ID=your-app-id
+FEISHU_APP_SECRET=your-app-secret
+FEISHU_RECEIVE_ID=your-open-id
+FEISHU_RECEIVE_ID_TYPE=open_id
+
+# 服务器配置（用于部署）
+SERVER_USER=root
+SERVER_IP=your-server-ip
+SERVER_PATH=/root/github_daily_report
+```
 
 ### 如何获取配置信息
 
@@ -141,10 +145,10 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 
 ### GitHub Actions 自动部署
 
-项目已配置 GitHub Actions，每天 UTC 23:00（北京时间早上 7:00）自动执行：
+项目已配置 GitHub Actions，每天北京时间 8:30 自动执行：
 
 1. 抓取 GitHub Trending 数据
-2. 生成简报和 JSON 数据文件
+2. 生成简报和 JSON 数据文件（包含智能分析）
 3. 推送消息到飞书
 4. SCP 文件到服务器
 
@@ -192,7 +196,15 @@ daily_report/
       "todayStars": "500",
       "forks": "1,000",
       "isAI": true,
-      "url": "https://github.com/owner/repo"
+      "url": "https://github.com/owner/repo",
+      "analysis": {
+        "type": "agent",
+        "typeName": "Agent 系统",
+        "coreFunctions": ["提供智能代理功能", "支持多步骤任务规划"],
+        "useCases": ["自动化工作流程", "智能客服系统"],
+        "trends": ["🔥 今日热度极高"],
+        "community": { "level": "高", "desc": "社区活跃" }
+      }
     }
   ],
   "stats": {
@@ -229,11 +241,10 @@ on:
 
 ## 🤝 与 OpenClaw 集成
 
-本项目生成的 `data.json` 文件可供 OpenClaw 等外部系统使用：
-
-- 项目只负责生成和推送 `data.json`
-- OpenClaw 在服务器上读取数据后进行 AI 分析、翻译等操作
-- 两个系统独立运行，松耦合集成
+本项目生成的 `data.json` 文件可供 OpenClaw 等系统读取，进行：
+- AI 趋势分析
+- 增强版 HTML 页面生成
+- 更详细的消息推送
 
 ## 📝 License
 
