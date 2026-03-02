@@ -10,26 +10,40 @@ async function getTenantAccessToken(appId, appSecret) {
     return cachedToken;
   }
 
-  const response = await fetch(`${FEISHU_API_BASE}/auth/v3/tenant_access_token/internal`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      app_id: appId,
-      app_secret: appSecret
-    }),
-    timeout: 15000
-  });
-
-  if (!response.ok) {
-    throw new Error(`获取 token 失败: ${response.status}`);
+  let response;
+  try {
+    response = await fetch(`${FEISHU_API_BASE}/auth/v3/tenant_access_token/internal`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        app_secret: appSecret
+      }),
+      timeout: 15000
+    });
+  } catch (error) {
+    console.log(`获取飞书 token 请求失败：${error.message}, 跳过推送`);
+    return null;
   }
 
-  const result = await response.json();
+  if (!response.ok) {
+    console.log(`获取飞书 token 失败：HTTP ${response.status}, 跳过推送`);
+    return null;
+  }
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (error) {
+    console.log(`解析飞书 token 响应失败：${error.message}, 跳过推送`);
+    return null;
+  }
 
   if (result.code !== 0) {
-    throw new Error(`获取 token 失败: ${result.msg}`);
+    console.log(`获取飞书 token 失败：${result.msg}, 跳过推送`);
+    return null;
   }
 
   cachedToken = result.tenant_access_token;
@@ -39,13 +53,15 @@ async function getTenantAccessToken(appId, appSecret) {
 }
 
 async function sendMessage(appId, appSecret, receiveId, receiveIdType, message) {
-  if (!appId || !appSecret) {
-    console.log('未配置飞书 App ID 或 App Secret，跳过推送');
-    return null;
-  }
-
-  if (!receiveId) {
-    console.log('未配置飞书接收者 ID，跳过推送');
+  // 检查必要配置是否存在
+  if (!appId || !appSecret || !receiveId || !receiveIdType) {
+    const missingConfigs = [];
+    if (!appId) missingConfigs.push('App ID');
+    if (!appSecret) missingConfigs.push('App Secret');
+    if (!receiveId) missingConfigs.push('接收者 ID');
+    if (!receiveIdType) missingConfigs.push('接收者类型');
+    
+    console.log(`飞书推送配置不完整 (${missingConfigs.join(', ')}),跳过推送`);
     return null;
   }
 
@@ -69,24 +85,38 @@ async function sendMessage(appId, appSecret, receiveId, receiveIdType, message) 
     })
   };
 
-  const response = await fetch(`${FEISHU_API_BASE}/im/v1/messages?receive_id_type=${receiveIdType}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(payload),
-    timeout: 15000
-  });
-
-  if (!response.ok) {
-    throw new Error(`飞书 API 请求失败: ${response.status} ${response.statusText}`);
+  let response;
+  try {
+    response = await fetch(`${FEISHU_API_BASE}/im/v1/messages?receive_id_type=${receiveIdType}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload),
+      timeout: 15000
+    });
+  } catch (error) {
+    console.log(`飞书消息请求失败：${error.message}, 跳过推送`);
+    return null;
   }
 
-  const result = await response.json();
+  if (!response.ok) {
+    console.log(`飞书消息发送失败：HTTP ${response.status} ${response.statusText}, 跳过推送`);
+    return null;
+  }
+
+  let result;
+  try {
+    result = await response.json();
+  } catch (error) {
+    console.log(`解析飞书消息响应失败：${error.message}, 跳过推送`);
+    return null;
+  }
 
   if (result.code !== 0) {
-    throw new Error(`飞书推送失败: ${result.msg || JSON.stringify(result)}`);
+    console.log(`飞书推送失败：${result.msg || JSON.stringify(result)}, 跳过推送`);
+    return null;
   }
 
   console.log('✅ 飞书消息发送成功');
