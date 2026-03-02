@@ -307,10 +307,8 @@ async function generateJsonData(projects) {
   }, 0);
   
   // 批量翻译项目描述
-  const translatedDescs = new Map();
-  for (const project of projects) {
-    translatedDescs.set(project, await translateDescription(project.desc));
-  }
+  const allDescs = projects.map(p => p.desc);
+  const translatedDescs = await batchTranslateDescriptions(allDescs);
   
   return {
     generatedAt: now,
@@ -323,7 +321,7 @@ async function generateJsonData(projects) {
         name: p.name,
         fullName: p.full_name,
         desc: p.desc,
-        descZh: translatedDescs.get(p),
+        descZh: translatedDescs.get(p.desc),
         language: p.language,
         homepage: p.homepage,
         topics: p.topics || [],
