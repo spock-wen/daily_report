@@ -267,7 +267,13 @@ async function generateSummaryForAI(projects) {
     typeCount[type] = (typeCount[type] || 0) + 1;
     langCount[p.language] = (langCount[p.language] || 0) + 1;
     
-    const todayStars = parseInt(p.todayStars?.replace(/,/g, '')) || 0;
+    let todayStars = 0;
+    if (typeof p.todayStars === 'string') {
+      todayStars = parseInt(p.todayStars.replace(/,/g, ''), 10) || 0;
+    } else if (typeof p.todayStars === 'number') {
+      todayStars = p.todayStars;
+    }
+    
     totalTodayStars += todayStars;
     if (todayStars > maxTodayStars) {
       maxTodayStars = todayStars;
@@ -289,16 +295,34 @@ async function generateSummaryForAI(projects) {
   const topType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0];
   const topLang = Object.entries(langCount).sort((a, b) => b[1] - a[1])[0];
   
+  const totalStarsVal = projects.reduce((sum, p) => {
+    let stars = 0;
+    if (typeof p.stars === 'string') {
+      stars = parseInt(p.stars.replace(/,/g, ''), 10) || 0;
+    } else if (typeof p.stars === 'number') {
+      stars = p.stars;
+    }
+    return sum + stars;
+  }, 0);
+
   return {
     date: formatDate(new Date()),
     total: projects.length,
     aiCount: projects.filter(p => p.isAI).length,
-    avgStars: `${Math.round(projects.reduce((sum, p) => sum + (parseInt(p.stars.replace(/,/g, '')) || 0), 0) / projects.length / 1000 * 10) / 10}k`,
+    avgStars: `${Math.round(totalStarsVal / projects.length / 1000 * 10) / 10}k`,
     topType: topType ? { name: topType[0], count: topType[1] } : null,
     topLang: topLang ? { name: topLang[0], count: topLang[1] } : null,
     topProject: topProject,
     maxTodayStars: maxTodayStars,
-    hotProjectCount: projects.filter(p => (parseInt(p.todayStars?.replace(/,/g, '')) || 0) > 300).length,
+    hotProjectCount: projects.filter(p => {
+      let todayStars = 0;
+      if (typeof p.todayStars === 'string') {
+        todayStars = parseInt(p.todayStars.replace(/,/g, ''), 10) || 0;
+      } else if (typeof p.todayStars === 'number') {
+        todayStars = p.todayStars;
+      }
+      return todayStars > 300;
+    }).length,
     projects: projectSummaries
   };
 }
@@ -308,7 +332,13 @@ async function generateJsonData(projects) {
   const date = formatDate(new Date());
   
   const totalStars = projects.reduce((sum, p) => {
-    return sum + (parseInt(p.stars.replace(/,/g, '')) || 0);
+    let stars = 0;
+    if (typeof p.stars === 'string') {
+      stars = parseInt(p.stars.replace(/,/g, ''), 10) || 0;
+    } else if (typeof p.stars === 'number') {
+      stars = p.stars;
+    }
+    return sum + stars;
   }, 0);
   
   // 批量翻译项目描述

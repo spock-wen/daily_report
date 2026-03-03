@@ -19,11 +19,17 @@ function formatDate(date) {
 }
 
 function formatStars(stars) {
-  const num = parseInt(stars.replace(/,/g, '')) || 0;
+  let num = 0;
+  if (typeof stars === 'string') {
+    num = parseInt(stars.replace(/,/g, ''), 10) || 0;
+  } else if (typeof stars === 'number') {
+    num = stars;
+  }
+  
   if (num >= 1000) {
     return (num / 1000).toFixed(1) + 'k';
   }
-  return stars;
+  return num.toString();
 }
 
 function isAIProject(repo, desc, language) {
