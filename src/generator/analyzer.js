@@ -141,7 +141,13 @@ function generateCoreFunctions(project, projectType) {
   }
   
   // 根据 Stars 判断成熟度
-  const stars = parseInt(project.stars?.replace(/,/g, '')) || 0;
+  let stars = 0;
+  if (typeof project.stars === 'string') {
+    stars = parseInt(project.stars.replace(/,/g, ''), 10);
+  } else if (typeof project.stars === 'number') {
+    stars = project.stars;
+  }
+  
   if (stars > 10000) {
     functions.push('经过大规模生产环境验证，社区活跃度高');
   } else if (stars > 1000) {
@@ -160,8 +166,21 @@ function generateUseCases(project, projectType) {
 // 生成趋势分析
 function generateTrendAnalysis(project) {
   const trends = [];
-  const todayStars = parseInt(project.todayStars?.replace(/,/g, '')) || 0;
-  const totalStars = parseInt(project.stars?.replace(/,/g, '')) || 0;
+  
+  // 处理 stars
+  let todayStars = 0;
+  if (typeof project.todayStars === 'string') {
+    todayStars = parseInt(project.todayStars.replace(/,/g, ''), 10);
+  } else if (typeof project.todayStars === 'number') {
+    todayStars = project.todayStars;
+  }
+  
+  let totalStars = 0;
+  if (typeof project.stars === 'string') {
+    totalStars = parseInt(project.stars.replace(/,/g, ''), 10);
+  } else if (typeof project.stars === 'number') {
+    totalStars = project.stars;
+  }
   
   // 基于今日增长判断热度
   if (todayStars > 500) {
@@ -218,8 +237,19 @@ function generateTrendAnalysis(project) {
 
 // 生成社区活跃度评估
 function generateCommunityActivity(project) {
-  const todayStars = parseInt(project.todayStars?.replace(/,/g, '')) || 0;
-  const totalStars = parseInt(project.stars?.replace(/,/g, '')) || 0;
+  let todayStars = 0;
+  if (typeof project.todayStars === 'string') {
+    todayStars = parseInt(project.todayStars.replace(/,/g, ''), 10);
+  } else if (typeof project.todayStars === 'number') {
+    todayStars = project.todayStars;
+  }
+  
+  let totalStars = 0;
+  if (typeof project.stars === 'string') {
+    totalStars = parseInt(project.stars.replace(/,/g, ''), 10);
+  } else if (typeof project.stars === 'number') {
+    totalStars = project.stars;
+  }
   
   if (todayStars > 500 && totalStars > 10000) {
     return { level: '极高', desc: '社区非常活跃，是领域内的标杆项目' };
