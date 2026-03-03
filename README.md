@@ -163,10 +163,10 @@ daily_report/
 ├── .github/
 │   └── workflows/
 │       └── daily-brief.yml         # GitHub Actions 配置
-├── briefs/                          # 生成的简报文件（不提交到 Git）
+├── briefs/                          # 生成的简报文件（运行时生成）
 │   ├── github-ai-trending-YYYY-MM-DD.md
 │   └── data.json                   # 结构化数据
-├── cache/                           # 爬虫缓存数据（不提交到 Git）
+├── cache/                           # 爬虫缓存数据（运行时生成）
 ├── scripts/
 │   └── get_openid.js               # 获取飞书 Open ID 脚本
 ├── src/
@@ -184,8 +184,6 @@ daily_report/
 │   │   └── generator.js            # 简报生成器
 │   └── utils/
 │       └── utils.js                # 工具函数
-├── .env.example                     # 环境变量示例（如有）
-├── .gitignore                       # Git 忽略配置
 ├── GITHUB_API_USAGE.md              # GitHub API 使用说明
 ├── package.json                     # 项目配置和依赖
 ├── run.js                           # 主入口文件
