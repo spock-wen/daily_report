@@ -104,8 +104,13 @@ async function generateMarkdown(projects) {
   md += `| Top 3 领域 | ${topDomains.map(([domain, count]) => `${domain} (${count})`).join('、')} |\n`;
   
   const totalStars = projects.reduce((sum, p) => {
-    const stars = parseInt(p.stars.replace(/,/g, '')) || 0;
-    return sum + stars;
+    let stars = 0;
+    if (typeof p.stars === 'string') {
+      stars = parseInt(p.stars.replace(/,/g, ''), 10);
+    } else if (typeof p.stars === 'number') {
+      stars = p.stars;
+    }
+    return sum + (isNaN(stars) ? 0 : stars);
   }, 0);
   const avgStars = Math.round(totalStars / projects.length / 1000 * 10) / 10;
   md += `| 平均 Stars | ${avgStars}k |\n`;
