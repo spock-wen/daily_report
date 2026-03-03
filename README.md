@@ -145,7 +145,7 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 
 ### GitHub Actions 自动部署
 
-项目已配置 GitHub Actions，每天北京时间 8:30 自动执行：
+项目已配置 GitHub Actions，每天北京时间 7:00 自动执行：
 
 1. 抓取 GitHub Trending 数据
 2. 生成简报和 JSON 数据文件（包含智能分析）
@@ -224,8 +224,14 @@ daily_report/
 ```yaml
 on:
   schedule:
-    - cron: '0 23 * * *'  # UTC 时间，改为你需要的时间
+    - cron: '0 23 * * *'  # UTC 23:00 = 北京时间 7:00
 ```
+
+**时间换算说明：**
+- GitHub Actions 使用 UTC 时间
+- 北京时间 = UTC + 8 小时
+-  cron 表达式格式：`分钟 小时 日 月 星期`
+- `'0 23 * * *'` 表示 UTC 23:00（北京时间 7:00）
 
 ### 修改抓取项目数量
 
