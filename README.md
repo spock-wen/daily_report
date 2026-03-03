@@ -16,7 +16,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/daily_report.git
+git clone https://github.com/spock-wen/daily_report.git
 cd daily_report
 npm install
 ```
@@ -162,20 +162,34 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 daily_report/
 ├── .github/
 │   └── workflows/
-│       └── daily-brief.yml    # GitHub Actions 配置
-├── briefs/                     # 生成的简报文件（不提交到 Git）
+│       └── daily-brief.yml         # GitHub Actions 配置
+├── briefs/                          # 生成的简报文件（不提交到 Git）
 │   ├── github-ai-trending-YYYY-MM-DD.md
-│   └── data.json              # 结构化数据
+│   └── data.json                   # 结构化数据
+├── cache/                           # 爬虫缓存数据（不提交到 Git）
+├── scripts/
+│   └── get_openid.js               # 获取飞书 Open ID 脚本
 ├── src/
-│   ├── config/                 # 配置文件
-│   ├── crawler/                # 爬虫模块
-│   ├── generator/              # 生成器模块
-│   │   ├── generator.js        # 简报生成
-│   │   └── feishu.js           # 飞书推送
-│   └── utils/                  # 工具函数
-├── scripts/                    # 脚本工具
-├── .env.example                # 环境变量示例
-└── package.json
+│   ├── config/
+│   │   ├── config.js               # 配置加载器
+│   │   └── config.json             # 配置文件
+│   ├── crawler/
+│   │   ├── crawl.js                # 爬虫入口
+│   │   ├── fetcher.js              # 网页抓取模块
+│   │   ├── github_api.js           # GitHub API 调用
+│   │   └── parser.js               # HTML 解析模块
+│   ├── generator/
+│   │   ├── analyzer.js             # 项目智能分析
+│   │   ├── feishu.js               # 飞书推送模块
+│   │   └── generator.js            # 简报生成器
+│   └── utils/
+│       └── utils.js                # 工具函数
+├── .env.example                     # 环境变量示例（如有）
+├── .gitignore                       # Git 忽略配置
+├── GITHUB_API_USAGE.md              # GitHub API 使用说明
+├── package.json                     # 项目配置和依赖
+├── run.js                           # 主入口文件
+└── README.md                        # 项目说明文档
 ```
 
 ## 📊 输出数据格式
@@ -230,7 +244,7 @@ on:
 **时间换算说明：**
 - GitHub Actions 使用 UTC 时间
 - 北京时间 = UTC + 8 小时
--  cron 表达式格式：`分钟 小时 日 月 星期`
+- cron 表达式格式：`分钟 小时 日 月 星期`
 - `'0 23 * * *'` 表示 UTC 23:00（北京时间 7:00）
 
 ### 修改抓取项目数量
@@ -244,6 +258,10 @@ on:
   }
 }
 ```
+
+### 配置说明
+
+详细配置请参考 [GITHUB_API_USAGE.md](GITHUB_API_USAGE.md)
 
 ## 🤝 与 OpenClaw 集成
 
