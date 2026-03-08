@@ -302,9 +302,48 @@ on:
 }
 ```
 
+### 修改简报显示数量
+
+编辑 `src/config/config.json`：
+
+```json
+{
+  "generator": {
+    "max_display_projects": 10
+  }
+}
+```
+
+这个配置控制：
+- Markdown 简报中显示的 Top N 项目数量
+- 飞书消息中显示的项目数量
+- 默认值：10
+
+### 修改简报输出目录
+
+编辑 `src/config/config.json`：
+
+```json
+{
+  "generator": {
+    "briefs_dir": "briefs"
+  }
+}
+```
+
+这个配置控制：
+- 生成的简报文件存储目录
+- 默认值：`briefs`
+- 实际输出目录：`{briefs_dir}/{daily|weekly|monthly}/`
+
 ### 配置说明
 
-详细配置请参考 [GITHUB_API_USAGE.md](GITHUB_API_USAGE.md)
+| 配置项 | 说明 | 默认值 | 影响范围 |
+|--------|------|--------|----------|
+| `crawler.max_projects` | 最多抓取的项目数量 | 25 | 影响抓取的项目总数 |
+| `crawler.timeout` | 请求超时时间（毫秒） | 30000 | 影响网络请求超时 |
+| `generator.briefs_dir` | 简报输出目录 | "briefs" | 影响文件存储位置 |
+| `generator.max_display_projects` | 简报显示项目数量 | 10 | 影响 Markdown 和飞书消息 |
 
 ## 🤝 与 OpenClaw 集成
 
