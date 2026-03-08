@@ -162,32 +162,36 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 daily_report/
 ├── .github/
 │   └── workflows/
-│       └── daily-brief.yml         # GitHub Actions 配置
-├── briefs/                          # 生成的简报文件（运行时生成）
-│   ├── github-ai-trending-YYYY-MM-DD.md
-│   └── data.json                   # 结构化数据
-├── cache/                           # 爬虫缓存数据（运行时生成）
-├── scripts/
-│   └── get_openid.js               # 获取飞书 Open ID 脚本
+│       └── daily-brief.yml    # GitHub Actions 配置
+├── briefs/                     # 生成的简报文件（不提交到 Git）
+│   ├── daily/                  # 每日数据
+│   │   ├── data-YYYY-MM-DD.json
+│   │   └── github-ai-trending-YYYY-MM-DD.md
+│   ├── weekly/                 # 周榜数据
+│   │   ├── data-week-YYYY-Www.json
+│   │   └── github-ai-trending-week-YYYY-Www.md
+│   └── monthly/                # 月榜数据
+│       ├── data-month-YYYY-MM.json
+│       └── github-ai-trending-month-YYYY-MM.md
 ├── src/
-│   ├── config/
-│   │   ├── config.js               # 配置加载器
-│   │   └── config.json             # 配置文件
-│   ├── crawler/
-│   │   ├── crawl.js                # 爬虫入口
-│   │   ├── fetcher.js              # 网页抓取模块
-│   │   ├── github_api.js           # GitHub API 调用
-│   │   └── parser.js               # HTML 解析模块
-│   ├── generator/
-│   │   ├── analyzer.js             # 项目智能分析
-│   │   ├── feishu.js               # 飞书推送模块
-│   │   └── generator.js            # 简报生成器
-│   └── utils/
-│       └── utils.js                # 工具函数
-├── GITHUB_API_USAGE.md              # GitHub API 使用说明
-├── package.json                     # 项目配置和依赖
-├── run.js                           # 主入口文件
-└── README.md                        # 项目说明文档
+│   ├── config/                 # 配置文件
+│   │   ├── config.js           # 配置加载器
+│   │   └── config.json         # 配置文件
+│   ├── crawler/                # 爬虫模块
+│   │   ├── crawl.js            # 主流程
+│   │   ├── fetcher.js          # 数据抓取
+│   │   ├── parser.js           # 数据解析
+│   │   └── github_api.js       # GitHub API 调用
+│   ├── generator/              # 生成器模块
+│   │   ├── generator.js        # 简报生成
+│   │   ├── feishu.js           # 飞书推送
+│   │   └── analyzer.js         # 项目分析
+│   └── utils/                  # 工具函数
+├── scripts/                    # 脚本工具
+│   └── get_openid.js           # 获取飞书 Open ID
+├── cache/                      # 缓存目录（不提交到 Git）
+├── .env                        # 环境变量配置（不提交到 Git）
+└── package.json
 ```
 
 ## 📊 输出数据格式
@@ -196,17 +200,20 @@ daily_report/
 
 ```json
 {
-  "generatedAt": "2026-02-26T08:00:00Z",
-  "date": "2026-02-26",
+  "generatedAt": "2026-03-08T14:00:00Z",
+  "date": "2026-03-08",
+  "triggerType": "daily",
+  "period": "每日",
   "projects": [
     {
       "repo": "owner/repo",
-      "desc": "项目描述",
-      "descZh": "中文描述",
+      "desc": "项目描述（英文）",
+      "descZh": "项目描述（中文翻译）",
       "language": "Python",
+      "topics": [],
       "stars": "10,000",
-      "todayStars": "500",
       "forks": "1,000",
+      "todayStars": "500",
       "isAI": true,
       "url": "https://github.com/owner/repo",
       "analysis": {
