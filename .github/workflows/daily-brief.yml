@@ -65,6 +65,7 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_RECEIVE_ID: ${{ secrets.FEISHU_RECEIVE_ID }}
+          FEISHU_RECEIVE_ID_TYPE: ${{ secrets.FEISHU_RECEIVE_ID_TYPE }}
         run: node src/crawler/crawl.js
 
       - name: Upload brief artifact
@@ -82,13 +83,43 @@ jobs:
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          # Check if required secrets are configured
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error::SSH_PRIVATE_KEY is not configured. Please add it to GitHub Secrets."
+            exit 1
+          fi
+          
+          if [ -z "$SERVER_HOST" ]; then
+            echo "::warning::SERVER_HOST is not configured, skipping deployment"
+            exit 0
+          fi
+          
+          if [ -z "$SERVER_USER" ]; then
+            echo "::warning::SERVER_USER is not configured, skipping deployment"
+            exit 0
+          fi
+          
+          if [ -z "$SERVER_PATH" ]; then
+            echo "::warning::SERVER_PATH is not configured, skipping deployment"
+            exit 0
+          fi
+
           # Setup SSH
+          echo "Setting up SSH..."
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
+          # Test SSH connection
+          echo "Testing SSH connection..."
+          if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER_USER@$SERVER_HOST" "echo 'SSH connection successful'"; then
+            echo "::error::SSH connection failed. Please check your SSH key and server configuration."
+            exit 1
+          fi
+
           # Create remote directory structure
+          echo "Creating remote directory structure..."
           ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
 
           # Deploy based on trigger type
@@ -100,7 +131,7 @@ jobs:
               scp "$WEEKLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/weekly/"
               echo "Deployed: $WEEKLY_FILE -> $SERVER_PATH/briefs/weekly/"
             else
-              echo "No weekly data file found"
+              echo "::error::No weekly data file found"
               exit 1
             fi
           elif [ "$TRIGGER_TYPE" = "monthly" ]; then
@@ -111,7 +142,7 @@ jobs:
               scp "$MONTHLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/monthly/"
               echo "Deployed: $MONTHLY_FILE -> $SERVER_PATH/briefs/monthly/"
             else
-              echo "No monthly data file found"
+              echo "::error::No monthly data file found"
               exit 1
             fi
           fi
