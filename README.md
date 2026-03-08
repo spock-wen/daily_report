@@ -145,16 +145,54 @@ FEISHU_APP_ID=your-app-id FEISHU_APP_SECRET=your-app-secret npm run get-openid
 
 ### GitHub Actions 自动部署
 
-项目已配置 GitHub Actions，每天北京时间 7:00 自动执行：
+项目已配置 GitHub Actions，按以下时间自动执行：
 
-1. 抓取 GitHub Trending 数据
+- **每日 7:00**：抓取日榜数据，生成 `briefs/daily/data-YYYY-MM-DD.json`
+- **每周一 6:00**：抓取周榜数据，生成 `briefs/weekly/data-week-YYYY-Www.json`
+- **每月 1 日 6:00**：抓取月榜数据，生成 `briefs/monthly/data-month-YYYY-MM.json`
+
+自动执行流程：
+1. 根据触发类型抓取对应时间粒度的 GitHub Trending 数据
 2. 生成简报和 JSON 数据文件（包含智能分析）
 3. 推送消息到飞书
-4. SCP 文件到服务器
+4. 根据触发类型推送对应数据到服务器
+
+### 📤 推送策略
+
+| 触发类型 | 推送的文件 | 服务器目录 |
+|---------|-----------|-----------|
+| 每日 7:00 | `briefs/daily/data-YYYY-MM-DD.json` | `${SERVER_PATH}/briefs/daily/` |
+| 每周一 6:00 | `briefs/weekly/data-week-YYYY-Www.json` | `${SERVER_PATH}/briefs/weekly/` |
+| 每月 1 日 6:00 | `briefs/monthly/data-month-YYYY-MM.json` | `${SERVER_PATH}/briefs/monthly/` |
+
+**注意**：
+- Markdown 简报文件（`.md`）仅本地生成，**不推送**到服务器
+- 不再推送 `data.json` 到服务器根目录
+- 每日触发时，JSON 文件仅上传为 GitHub Artifact，不部署到服务器
+
+### 服务器目录结构
+
+部署到服务器后，目录结构如下：
+
+```
+${SERVER_PATH}/
+└── briefs/
+    ├── daily/
+    │   ├── data-2026-03-08.json
+    │   └── ...
+    ├── weekly/
+    │   ├── data-week-2026-W10.json
+    │   └── ...
+    └── monthly/
+        ├── data-month-2026-03.json
+        └── ...
+```
 
 ### 手动触发
 
 在 GitHub 仓库的 **Actions** 页面，选择 `Daily GitHub AI Brief` workflow，点击 **Run workflow** 手动触发。
+
+手动触发时默认为每日类型，生成 `briefs/daily/` 目录下的文件。
 
 ## 📁 项目结构
 
