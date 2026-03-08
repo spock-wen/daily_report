@@ -2,6 +2,18 @@ const { isAIProject } = require('../utils/utils');
 const config = require('../config/config');
 
 /**
+ * 根据 since 参数获取对应的标签文本
+ */
+function getSinceLabel(since) {
+  const labels = {
+    daily: 'today',
+    weekly: 'this week',
+    monthly: 'this month'
+  };
+  return labels[since] || 'today';
+}
+
+/**
  * 清理 HTML 标签和多余内容
  */
 function cleanHtml(text) {
@@ -29,8 +41,10 @@ function extractNumber(text) {
 
 /**
  * 增强版解析 GitHub Trending HTML
+ * @param {string} html - HTML 内容
+ * @param {string} since - 时间粒度 (daily/weekly/monthly)
  */
-function parseTrending(html) {
+function parseTrending(html, since = 'daily') {
   const projects = [];
   const seen = new Set();
   
@@ -47,12 +61,14 @@ function parseTrending(html) {
   
   // 多种解析策略，提高容错性
   
+  const sinceLabel = getSinceLabel(since);
+  
   // 策略 1: 使用 article 标签解析（GitHub 标准结构）
   const articleRegex = /<article[^>]*class="[^"]*Box-row[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
   let articleMatch;
   
   while ((articleMatch = articleRegex.exec(html)) !== null) {
-    const project = parseArticle(articleMatch[1]);
+    const project = parseArticle(articleMatch[1], sinceLabel);
     if (project && !seen.has(project.repo)) {
       seen.add(project.repo);
       projects.push(project);
@@ -64,7 +80,7 @@ function parseTrending(html) {
     console.warn('⚠️ 标准解析失败，尝试备用解析方案...');
     const divRegex = /<div[^>]*class="[^"]*f4[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
     while ((articleMatch = divRegex.exec(html)) !== null) {
-      const project = parseArticle(articleMatch[1]);
+      const project = parseArticle(articleMatch[1], sinceLabel);
       if (project && project.repo && !seen.has(project.repo)) {
         seen.add(project.repo);
         projects.push(project);
@@ -98,8 +114,10 @@ function parseTrending(html) {
 
 /**
  * 解析单个项目文章
+ * @param {string} articleContent - 文章 HTML 内容
+ * @param {string} sinceLabel - 时间标签 (today/this week/this month)
  */
-function parseArticle(articleContent) {
+function parseArticle(articleContent, sinceLabel = 'today') {
   try {
     // 提取仓库名称（多种模式匹配）
     let repo = null;
@@ -161,8 +179,9 @@ function parseArticle(articleContent) {
     // 提取今日 Stars 增长（多种模式）
     let todayStars = '0';
     
-    // 模式 1: "XXX stars today"
-    const todayStarsMatch = articleContent.match(/(\d[\d,]*)\s*stars?\s*today/i);
+    // 模式 1: "XXX stars today/this week/this month"
+    const todayStarsRegex = new RegExp(`(\\d[\\d,]*)\\s*stars?\\s*${sinceLabel}`, 'i');
+    const todayStarsMatch = articleContent.match(todayStarsRegex);
     if (todayStarsMatch) {
       todayStars = todayStarsMatch[1].replace(/,/g, '');
     }

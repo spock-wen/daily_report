@@ -81,20 +81,27 @@ async function batchTranslateDescriptions(descriptions) {
   return translatedMap;
 }
 
-async function generateMarkdown(projects) {
+async function generateMarkdown(projects, triggerType = 'daily') {
   const date = formatDate(new Date());
   const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
   
-  let md = `# 🚀 GitHub AI 项目每日简报\n\n`;
+  const periodMap = {
+    daily: '每日',
+    weekly: '每周',
+    monthly: '每月'
+  };
+  const period = periodMap[triggerType] || '每日';
+  
+  let md = `# 🚀 GitHub AI 项目${period}简报\n\n`;
   md += `**日期**: ${date}  \n`;
-  md += `**来源**: GitHub Trending (24h)  \n`;
+  md += `**来源**: GitHub Trending (${period})  \n`;
   md += `**生成时间**: ${now}\n\n`;
   md += `---\n\n`;
   
   md += `## 📊 概览指标\n\n`;
   md += `| 指标 | 值 |\n`;
   md += `|------|------|\n`;
-  md += `| 今日热门项目 | ${projects.length} 个 |\n`;
+  md += `| ${period}热门项目 | ${projects.length} 个 |\n`;
   md += `| AI 相关项目 | ${projects.filter(p => p.isAI).length} 个 |\n`;
   
   const domains = analyzeDomains(projects);
@@ -141,7 +148,7 @@ async function generateMarkdown(projects) {
     }
     
     // 基础信息表格
-    md += `| 语言 | Stars | 今日增长 | 社区活跃度 |\n`;
+    md += `| 语言 | Stars | ${period}增长 | 社区活跃度 |\n`;
     md += `|------|-------|----------|------------|\n`;
     md += `| ${project.language} | ${formatStars(project.stars)} | ⭐ ${formatStars(project.todayStars)} | ${analysis.community.level} |\n\n`;
     
@@ -174,7 +181,7 @@ async function generateMarkdown(projects) {
   // 添加提示：还有更多项目
   if (projects.length > displayCount) {
     md += `## 📋 更多项目\n\n`;
-    md += `今日还有 **${projects.length - displayCount}** 个热门项目，详细数据请访问服务器页面查看完整列表。\n\n`;
+    md += `${period}还有 **${projects.length - displayCount}** 个热门项目，详细数据请访问服务器页面查看完整列表。\n\n`;
     md += `---\n\n`;
   }
   
@@ -217,13 +224,20 @@ function analyzeDomains(projects) {
   return domains;
 }
 
-async function generateFeishuMessage(projects) {
+async function generateFeishuMessage(projects, triggerType = 'daily') {
   const date = formatDate(new Date());
   
-  let message = `# 🚀 GitHub AI 项目每日简报\n`;
+  const periodMap = {
+    daily: '每日',
+    weekly: '每周',
+    monthly: '每月'
+  };
+  const period = periodMap[triggerType] || '每日';
+  
+  let message = `# 🚀 GitHub AI 项目${period}简报\n`;
   message += `**日期**: ${date}\n\n`;
   
-  message += `## 📊 今日概览\n`;
+  message += `## 📊 ${period}概览\n`;
   message += `共收录 **${projects.length}** 个热门项目`;
   
   const aiCount = projects.filter(p => p.isAI).length;
@@ -242,10 +256,10 @@ async function generateFeishuMessage(projects) {
     
     if (project.desc) {
       const translatedDesc = await translateDescription(project.desc);
-      message += `> ${translatedDesc.substring(0, 60)}${translatedDesc.length > 60 ? '...' : ''}\n`;
+      message += `> ${translatedDesc.substring(0, 80)}${translatedDesc.length > 80 ? '...' : ''}\n`;
     }
     
-    message += `类型: ${analysis.typeName} | 语言: ${project.language} | 今日: ⭐ ${formatStars(project.todayStars)}\n\n`;
+    message += `类型：${analysis.typeName} | 语言：${project.language} | ⭐ ${formatStars(project.stars)} | 今日：+${formatStars(project.todayStars)}\n\n`;
   }
   
   message += `---\n`;
@@ -255,12 +269,19 @@ async function generateFeishuMessage(projects) {
 }
 
 // 生成极简的 summary 数据，用于给 AI 分析
-async function generateSummaryForAI(projects) {
+async function generateSummaryForAI(projects, triggerType = 'daily') {
   const typeCount = {};
   const langCount = {};
   let totalTodayStars = 0;
   let maxTodayStars = 0;
   let topProject = null;
+  
+  const periodMap = {
+    daily: '每日',
+    weekly: '每周',
+    monthly: '每月'
+  };
+  const period = periodMap[triggerType] || '每日';
   
   const projectSummaries = await Promise.all(projects.map(async p => {
     const type = detectProjectType(p.repo, p.desc);
@@ -307,6 +328,8 @@ async function generateSummaryForAI(projects) {
 
   return {
     date: formatDate(new Date()),
+    period: period,
+    triggerType: triggerType,
     total: projects.length,
     aiCount: projects.filter(p => p.isAI).length,
     avgStars: `${Math.round(totalStarsVal / projects.length / 1000 * 10) / 10}k`,
@@ -327,9 +350,16 @@ async function generateSummaryForAI(projects) {
   };
 }
 
-async function generateJsonData(projects) {
+async function generateJsonData(projects, triggerType = 'daily') {
   const now = new Date().toISOString();
   const date = formatDate(new Date());
+  
+  const periodMap = {
+    daily: '每日',
+    weekly: '每周',
+    monthly: '每月'
+  };
+  const period = periodMap[triggerType] || '每日';
   
   const totalStars = projects.reduce((sum, p) => {
     let stars = 0;
@@ -348,6 +378,8 @@ async function generateJsonData(projects) {
   return {
     generatedAt: now,
     date: date,
+    triggerType: triggerType,
+    period: period,
     projects: projects.map(p => {
       const analysis = analyzeProject(p);
       return {
@@ -414,8 +446,7 @@ async function generateJsonData(projects) {
       aiProjects: projects.filter(p => p.isAI).length,
       avgStars: `${Math.round(totalStars / projects.length / 1000 * 10) / 10}k`
     },
-    // 新增：给 AI 分析的极简 summary
-    summary: await generateSummaryForAI(projects)
+    summary: await generateSummaryForAI(projects, triggerType)
   };
 }
 

@@ -8,17 +8,5 @@
   "generator": {
     "briefs_dir": "briefs",
     "max_display_projects": 10
-  },
-  "server": {
-    "port": 8080,
-    "host": "0.0.0.0",
-    "templates_dir": "templates",
-    "output_dir": "."
-  },
-  "deployment": {
-    "server_ip": "",
-    "server_user": "",
-    "server_path": "",
-    "ssh_key_path": ""
   }
 }

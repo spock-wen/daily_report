@@ -2,44 +2,98 @@ name: Daily GitHub AI Brief
 
 on:
   schedule:
-    - cron: '0 23 * * *'
+    - cron: '0 23 * * *'     # 每日 7:00 (UTC 23:00)
+    - cron: '0 22 * * 1'     # 每周一 6:00 (UTC 22:00)
+    - cron: '0 22 1 * *'     # 每月 1 日 6:00 (UTC 22:00)
   workflow_dispatch:
 
 jobs:
   generate-brief:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Set up Node.js
+
+      - name: Identify trigger type
+        id: trigger
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then
+            echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=daily"
+          elif [ "${{ github.event.schedule }}" = "0 22 * * 1" ]; then
+            echo "TRIGGER_TYPE=weekly" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=weekly"
+          elif [ "${{ github.event.schedule }}" = "0 22 1 * *" ]; then
+            echo "TRIGGER_TYPE=monthly" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=monthly"
+          else
+            echo "TRIGGER_TYPE=manual" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=manual"
+          fi
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-      
+          node-version: '20'
+
       - name: Install dependencies
         run: npm install
-      
+
       - name: Generate brief
-        run: npm run crawl
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          TRIGGER_TYPE: ${{ env.TRIGGER_TYPE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_RECEIVE_ID: ${{ secrets.FEISHU_RECEIVE_ID }}
-          FEISHU_RECEIVE_ID_TYPE: ${{ secrets.FEISHU_RECEIVE_ID_TYPE }}
-      
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-      
+        run: node src/crawler/crawl.js
+
+      - name: Upload brief artifact
+        if: ${{ env.TRIGGER_TYPE == 'daily' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-brief
+          path: briefs/
+
       - name: Deploy to server
+        if: ${{ env.TRIGGER_TYPE == 'weekly' || env.TRIGGER_TYPE == 'monthly' }}
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "mkdir -p ${{ secrets.SERVER_PATH }}/briefs"
-          scp -r briefs/* ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/briefs/
-          scp briefs/data.json ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.SERVER_PATH }}/data.json
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          # Create remote directory structure
+          ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
+
+          # Deploy based on trigger type
+          if [ "$TRIGGER_TYPE" = "weekly" ]; then
+            echo "Deploying weekly brief to server..."
+            # Find the latest weekly data file
+            WEEKLY_FILE=$(find briefs/weekly -name "data-week-*.json" -type f | head -n 1)
+            if [ -n "$WEEKLY_FILE" ]; then
+              scp "$WEEKLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/weekly/"
+              echo "Deployed: $WEEKLY_FILE -> $SERVER_PATH/briefs/weekly/"
+            else
+              echo "No weekly data file found"
+              exit 1
+            fi
+          elif [ "$TRIGGER_TYPE" = "monthly" ]; then
+            echo "Deploying monthly brief to server..."
+            # Find the latest monthly data file
+            MONTHLY_FILE=$(find briefs/monthly -name "data-month-*.json" -type f | head -n 1)
+            if [ -n "$MONTHLY_FILE" ]; then
+              scp "$MONTHLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/monthly/"
+              echo "Deployed: $MONTHLY_FILE -> $SERVER_PATH/briefs/monthly/"
+            else
+              echo "No monthly data file found"
+              exit 1
+            fi
+          fi

@@ -78,10 +78,12 @@ function clearCache() {
 /**
  * 带重试机制的获取 GitHub Trending
  * @param {number} maxRetries - 最大重试次数
+ * @param {string} since - 时间粒度 (daily/weekly/monthly)
  * @returns {Promise<string>} HTML 内容
  */
-async function fetchTrending(maxRetries = 3) {
-  const url = config.crawler.github_trending_url;
+async function fetchTrending(maxRetries = 3, since = 'daily') {
+  const baseUrl = config.crawler.github_trending_url.split('?')[0];
+  const url = `${baseUrl}?since=${since}`;
   let lastError = null;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -182,10 +184,11 @@ async function fetchTrending(maxRetries = 3) {
 
 /**
  * 强制刷新（不使用缓存）
+ * @param {string} since - 时间粒度 (daily/weekly/monthly)
  */
-async function fetchTrendingForceRefresh() {
+async function fetchTrendingForceRefresh(since = 'daily') {
   clearCache();
-  return fetchTrending();
+  return fetchTrending(3, since);
 }
 
 module.exports = { 

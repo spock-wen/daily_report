@@ -12,7 +12,6 @@ function loadConfig() {
     return config;
   } catch (error) {
     console.error('读取配置文件失败:', error.message);
-    // 返回默认配置
     return {
       crawler: {
         github_trending_url: 'https://github.com/trending?since=daily',
@@ -22,20 +21,7 @@ function loadConfig() {
       },
       generator: {
         briefs_dir: 'briefs',
-        max_display_projects: 10,
-        feishu_webhook_url: ''
-      },
-      server: {
-        port: 8000,
-        host: 'localhost',
-        templates_dir: 'templates',
-        output_dir: '.'
-      },
-      deployment: {
-        server_ip: '',
-        server_user: '',
-        server_path: '',
-        ssh_key_path: ''
+        max_display_projects: 10
       }
     };
   }

@@ -9,35 +9,88 @@ const { generateMarkdown, generateFeishuMessage, generateJsonData } = require('.
 const { sendMessage } = require('../generator/feishu');
 const config = require('../config/config');
 
-const BRIEF_DIR = path.join(__dirname, '..', '..', config.generator.briefs_dir);
+const TRIGGER_TYPE = process.env.TRIGGER_TYPE || 'daily';
 const DATE = new Date().toISOString().split('T')[0];
-const OUTPUT_FILE = path.join(BRIEF_DIR, `github-ai-trending-${DATE}.md`);
+const OUTPUT_DIR = path.join(__dirname, '..', '..', config.generator.briefs_dir, TRIGGER_TYPE);
+
+function getDailyDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getWeeklyDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const week = getISOWeek(now);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+function getMonthlyDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getOutputFileDate(triggerType) {
+  switch (triggerType) {
+    case 'weekly':
+      return getWeeklyDate();
+    case 'monthly':
+      return getMonthlyDate();
+    case 'daily':
+    default:
+      return getDailyDate();
+  }
+}
+
+const OUTPUT_DATE = getOutputFileDate(TRIGGER_TYPE);
+const OUTPUT_FILE = path.join(OUTPUT_DIR, `github-ai-trending-${TRIGGER_TYPE === 'daily' ? '' : TRIGGER_TYPE + '-'}${OUTPUT_DATE}.md`);
 
 const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
 const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
 const FEISHU_RECEIVE_ID = process.env.FEISHU_RECEIVE_ID;
 const FEISHU_RECEIVE_ID_TYPE = process.env.FEISHU_RECEIVE_ID_TYPE || 'chat_id';
 
-// GitHub Token (GitHub Action 默认提供 GITHUB_TOKEN 环境变量)
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || null;
+
+const SINCE_MAP = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly'
+};
 
 async function main() {
   console.log('🦞 大龙虾 GitHub 简报生成器');
   console.log('='.repeat(50));
-  console.log(`启动时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`);
+  console.log(`触发类型：${TRIGGER_TYPE}`);
+  console.log(`启动时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`);
   console.log('='.repeat(50));
   
   try {
-    if (!fs.existsSync(BRIEF_DIR)) {
-      fs.mkdirSync(BRIEF_DIR, { recursive: true });
-      console.log(`创建简报目录: ${BRIEF_DIR}`);
+    if (!fs.existsSync(OUTPUT_DIR)) {
+      fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+      console.log(`创建简报目录：${OUTPUT_DIR}`);
     }
     
+    const since = SINCE_MAP[TRIGGER_TYPE] || 'daily';
+    
     console.log('\n📊 正在获取 GitHub Trending 数据...');
-    const html = await fetchTrending();
+    const html = await fetchTrending(3, since);
     
     console.log('\n🔍 正在解析项目信息...');
-    let projects = parseTrending(html);
+    let projects = parseTrending(html, since);
     
     if (projects.length === 0) {
       throw new Error('未解析到任何项目，请检查 GitHub Trending 页面结构是否变化');
@@ -54,12 +107,12 @@ async function main() {
     }
     
     console.log('\n📝 正在生成简报...');
-    const md = await generateMarkdown(projects);
+    const md = await generateMarkdown(projects, TRIGGER_TYPE);
     fs.writeFileSync(OUTPUT_FILE, md, 'utf8');
     console.log(`✅ 简报已生成：${OUTPUT_FILE}`);
     
-    const jsonFile = path.join(BRIEF_DIR, 'data.json');
-    const jsonData = await generateJsonData(projects);
+    const jsonFile = path.join(OUTPUT_DIR, `data-${TRIGGER_TYPE === 'daily' ? '' : TRIGGER_TYPE + '-'}${OUTPUT_DATE}.json`);
+    const jsonData = await generateJsonData(projects, TRIGGER_TYPE);
     fs.writeFileSync(jsonFile, JSON.stringify(jsonData, null, 2), 'utf8');
     console.log(`✅ 数据文件已生成：${jsonFile}`);
     
