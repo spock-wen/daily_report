@@ -6,6 +6,16 @@ on:
     - cron: '0 22 * * 1'     # 每周一 6:00 (UTC 22:00)
     - cron: '0 22 1 * *'     # 每月 1 日 6:00 (UTC 22:00)
   workflow_dispatch:
+    inputs:
+      trigger_type:
+        description: '触发类型（手动触发时使用）'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
 
 jobs:
   generate-brief:
@@ -18,18 +28,26 @@ jobs:
       - name: Identify trigger type
         id: trigger
         run: |
-          if [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then
-            echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
-            echo "TRIGGER_TYPE=daily"
-          elif [ "${{ github.event.schedule }}" = "0 22 * * 1" ]; then
-            echo "TRIGGER_TYPE=weekly" >> $GITHUB_ENV
-            echo "TRIGGER_TYPE=weekly"
-          elif [ "${{ github.event.schedule }}" = "0 22 1 * *" ]; then
-            echo "TRIGGER_TYPE=monthly" >> $GITHUB_ENV
-            echo "TRIGGER_TYPE=monthly"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then
+              echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
+              echo "TRIGGER_TYPE=daily (scheduled)"
+            elif [ "${{ github.event.schedule }}" = "0 22 * * 1" ]; then
+              echo "TRIGGER_TYPE=weekly" >> $GITHUB_ENV
+              echo "TRIGGER_TYPE=weekly (scheduled)"
+            elif [ "${{ github.event.schedule }}" = "0 22 1 * *" ]; then
+              echo "TRIGGER_TYPE=monthly" >> $GITHUB_ENV
+              echo "TRIGGER_TYPE=monthly (scheduled)"
+            else
+              echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
+              echo "TRIGGER_TYPE=daily (fallback)"
+            fi
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TRIGGER_TYPE=${{ inputs.trigger_type }}" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=${{ inputs.trigger_type }} (manual)"
           else
-            echo "TRIGGER_TYPE=manual" >> $GITHUB_ENV
-            echo "TRIGGER_TYPE=manual"
+            echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
+            echo "TRIGGER_TYPE=daily (default)"
           fi
 
       - name: Setup Node.js
