@@ -138,7 +138,7 @@ jobs:
           elif [ "$TRIGGER_TYPE" = "weekly" ]; then
             echo "Deploying weekly brief to server..."
             # Find the latest weekly data file
-            WEEKLY_FILE=$(find briefs/weekly -name "data-week-*.json" -type f | head -n 1)
+            WEEKLY_FILE=$(find briefs/weekly -name "data-weekly-*.json" -type f | head -n 1)
             if [ -n "$WEEKLY_FILE" ]; then
               scp "$WEEKLY_FILE" "$SERVER_USER@$SERVER_IP:$SERVER_PATH/briefs/weekly/"
               echo "Deployed: $WEEKLY_FILE -> $SERVER_PATH/briefs/weekly/"
@@ -149,7 +149,7 @@ jobs:
           elif [ "$TRIGGER_TYPE" = "monthly" ]; then
             echo "Deploying monthly brief to server..."
             # Find the latest monthly data file
-            MONTHLY_FILE=$(find briefs/monthly -name "data-month-*.json" -type f | head -n 1)
+            MONTHLY_FILE=$(find briefs/monthly -name "data-monthly-*.json" -type f | head -n 1)
             if [ -n "$MONTHLY_FILE" ]; then
               scp "$MONTHLY_FILE" "$SERVER_USER@$SERVER_IP:$SERVER_PATH/briefs/monthly/"
               echo "Deployed: $MONTHLY_FILE -> $SERVER_PATH/briefs/monthly/"
