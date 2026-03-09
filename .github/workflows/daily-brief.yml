@@ -69,14 +69,14 @@ jobs:
         run: node src/crawler/crawl.js
 
       - name: Upload brief artifact
-        if: ${{ env.TRIGGER_TYPE == 'daily' }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: daily-brief
+          name: brief-${{ env.TRIGGER_TYPE }}
           path: briefs/
 
       - name: Deploy to server
-        if: ${{ env.TRIGGER_TYPE == 'weekly' || env.TRIGGER_TYPE == 'monthly' }}
+        if: ${{ env.TRIGGER_TYPE == 'daily' || env.TRIGGER_TYPE == 'weekly' || env.TRIGGER_TYPE == 'monthly' }}
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -121,10 +121,21 @@ jobs:
 
           # Create remote directory structure
           echo "Creating remote directory structure..."
-          ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
+          ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p $SERVER_PATH/briefs/daily $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
 
           # Deploy based on trigger type
-          if [ "$TRIGGER_TYPE" = "weekly" ]; then
+          if [ "$TRIGGER_TYPE" = "daily" ]; then
+            echo "Deploying daily brief to server..."
+            # Find the latest daily data file
+            DAILY_FILE=$(find briefs/daily -name "data-*.json" -type f | head -n 1)
+            if [ -n "$DAILY_FILE" ]; then
+              scp "$DAILY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/daily/"
+              echo "Deployed: $DAILY_FILE -> $SERVER_PATH/briefs/daily/"
+            else
+              echo "::error::No daily data file found"
+              exit 1
+            fi
+          elif [ "$TRIGGER_TYPE" = "weekly" ]; then
             echo "Deploying weekly brief to server..."
             # Find the latest weekly data file
             WEEKLY_FILE=$(find briefs/weekly -name "data-week-*.json" -type f | head -n 1)
