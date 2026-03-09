@@ -78,7 +78,7 @@ jobs:
       - name: Deploy to server
         if: ${{ env.TRIGGER_TYPE == 'daily' || env.TRIGGER_TYPE == 'weekly' || env.TRIGGER_TYPE == 'monthly' }}
         env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
         run: |
@@ -86,12 +86,12 @@ jobs:
           if [ -z "${{ secrets.SERVER_SSH_KEY }}" ]; then
             echo "::warning::SERVER_SSH_KEY is not configured. Deployment to server is skipped."
             echo "::notice::简报已生成并上传为 Artifact，但服务器部署已跳过。"
-            echo "::notice::如需部署到服务器，请在 GitHub Secrets 中配置 SERVER_SSH_KEY、SERVER_HOST、SERVER_USER、SERVER_PATH"
+            echo "::notice::如需部署到服务器，请在 GitHub Secrets 中配置 SERVER_SSH_KEY、SERVER_IP、SERVER_USER、SERVER_PATH"
             exit 0
           fi
           
-          if [ -z "$SERVER_HOST" ]; then
-            echo "::warning::SERVER_HOST is not configured, skipping deployment"
+          if [ -z "$SERVER_IP" ]; then
+            echo "::warning::SERVER_IP is not configured, skipping deployment"
             exit 0
           fi
           
@@ -110,18 +110,18 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$SERVER_IP" >> ~/.ssh/known_hosts 2>/dev/null
 
           # Test SSH connection
           echo "Testing SSH connection..."
-          if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER_USER@$SERVER_HOST" "echo 'SSH connection successful'"; then
+          if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER_USER@$SERVER_IP" "echo 'SSH connection successful'"; then
             echo "::error::SSH connection failed. Please check your SSH key and server configuration."
             exit 1
           fi
 
           # Create remote directory structure
           echo "Creating remote directory structure..."
-          ssh "$SERVER_USER@$SERVER_HOST" "mkdir -p $SERVER_PATH/briefs/daily $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
+          ssh "$SERVER_USER@$SERVER_IP" "mkdir -p $SERVER_PATH/briefs/daily $SERVER_PATH/briefs/weekly $SERVER_PATH/briefs/monthly"
 
           # Deploy based on trigger type
           if [ "$TRIGGER_TYPE" = "daily" ]; then
@@ -129,7 +129,7 @@ jobs:
             # Find the latest daily data file
             DAILY_FILE=$(find briefs/daily -name "data-*.json" -type f | head -n 1)
             if [ -n "$DAILY_FILE" ]; then
-              scp "$DAILY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/daily/"
+              scp "$DAILY_FILE" "$SERVER_USER@$SERVER_IP:$SERVER_PATH/briefs/daily/"
               echo "Deployed: $DAILY_FILE -> $SERVER_PATH/briefs/daily/"
             else
               echo "::error::No daily data file found"
@@ -140,7 +140,7 @@ jobs:
             # Find the latest weekly data file
             WEEKLY_FILE=$(find briefs/weekly -name "data-week-*.json" -type f | head -n 1)
             if [ -n "$WEEKLY_FILE" ]; then
-              scp "$WEEKLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/weekly/"
+              scp "$WEEKLY_FILE" "$SERVER_USER@$SERVER_IP:$SERVER_PATH/briefs/weekly/"
               echo "Deployed: $WEEKLY_FILE -> $SERVER_PATH/briefs/weekly/"
             else
               echo "::error::No weekly data file found"
@@ -151,7 +151,7 @@ jobs:
             # Find the latest monthly data file
             MONTHLY_FILE=$(find briefs/monthly -name "data-month-*.json" -type f | head -n 1)
             if [ -n "$MONTHLY_FILE" ]; then
-              scp "$MONTHLY_FILE" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/briefs/monthly/"
+              scp "$MONTHLY_FILE" "$SERVER_USER@$SERVER_IP:$SERVER_PATH/briefs/monthly/"
               echo "Deployed: $MONTHLY_FILE -> $SERVER_PATH/briefs/monthly/"
             else
               echo "::error::No monthly data file found"
