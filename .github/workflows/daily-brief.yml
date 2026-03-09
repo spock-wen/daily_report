@@ -81,10 +81,9 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_PATH: ${{ secrets.SERVER_PATH }}
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           # Check if required secrets are configured
-          if [ -z "$SSH_PRIVATE_KEY" ]; then
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
             echo "::warning::SSH_PRIVATE_KEY is not configured. Deployment to server is skipped."
             echo "::notice::简报已生成并上传为 Artifact，但服务器部署已跳过。"
             echo "::notice::如需部署到服务器，请在 GitHub Secrets 中配置 SSH_PRIVATE_KEY、SERVER_HOST、SERVER_USER、SERVER_PATH"
@@ -109,7 +108,7 @@ jobs:
           # Setup SSH
           echo "Setting up SSH..."
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
