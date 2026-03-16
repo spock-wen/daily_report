@@ -3,8 +3,8 @@ name: Daily GitHub AI Brief
 on:
   schedule:
     - cron: '0 23 * * *'     # 每日 7:00 (UTC 23:00)
-    - cron: '0 22 * * 1'     # 每周一 6:00 (UTC 22:00)
-    - cron: '0 22 1 * *'     # 每月 1 日 6:00 (UTC 22:00)
+    - cron: '0 22 * * 0'     # 每周一 6:00 (周日 UTC 22:00)
+    - cron: '0 1 1 * *'     # 每月 1 日 9:00 (UTC 01:00)
   workflow_dispatch:
     inputs:
       trigger_type:
@@ -32,10 +32,10 @@ jobs:
             if [ "${{ github.event.schedule }}" = "0 23 * * *" ]; then
               echo "TRIGGER_TYPE=daily" >> $GITHUB_ENV
               echo "TRIGGER_TYPE=daily (scheduled)"
-            elif [ "${{ github.event.schedule }}" = "0 22 * * 1" ]; then
+            elif [ "${{ github.event.schedule }}" = "0 22 * * 0" ]; then
               echo "TRIGGER_TYPE=weekly" >> $GITHUB_ENV
               echo "TRIGGER_TYPE=weekly (scheduled)"
-            elif [ "${{ github.event.schedule }}" = "0 22 1 * *" ]; then
+            elif [ "${{ github.event.schedule }}" = "0 1 1 * *" ]; then
               echo "TRIGGER_TYPE=monthly" >> $GITHUB_ENV
               echo "TRIGGER_TYPE=monthly (scheduled)"
             else
